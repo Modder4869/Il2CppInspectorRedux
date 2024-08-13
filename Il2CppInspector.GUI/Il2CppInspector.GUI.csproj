@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net9.0-windows</TargetFramework>
     <PublishSingleFile>true</PublishSingleFile>
     <!-- Plugins may require bass class library assemblies we're not using so disable trimming -->
     <PublishTrimmed>false</PublishTrimmed>
@@ -33,10 +33,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NETCore.Targets" Version="2.1.0" ExcludeAssets="all" PrivateAssets="all" />
-    <PackageReference Include="Ookii.Dialogs.Wpf" Version="3.1.0" />
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.7.0" />
-    <PackageReference Include="XamlAnimatedGif" Version="1.2.2">
+    <PackageReference Include="Ookii.Dialogs.Wpf" Version="5.0.1" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
+    <PackageReference Include="XamlAnimatedGif" Version="2.3.0">
       <NoWarn>NU1701</NoWarn>
     </PackageReference>
   </ItemGroup>

@@ -28,10 +28,10 @@ jobs:
         run: nuget restore
       
       - name: Build GUI
-        run: msbuild /t:Il2CppInspector_GUI:publish /p:Configuration=Release /p:Platform="Any CPU" /p:TargetFramework=net8.0-windows /p:SelfContained=false /verbosity:minimal
+        run: msbuild /t:Il2CppInspector_GUI:publish /p:Configuration=Release /p:Platform="Any CPU" /p:TargetFramework=net9.0-windows /p:SelfContained=false /verbosity:minimal
 
       - name: Build CLI
-        run: msbuild /t:Il2CppInspector_CLI:publish /p:Configuration=Release /p:Platform="Any CPU" /p:TargetFramework=net8.0 /p:SelfContained=false /verbosity:minimal
+        run: msbuild /t:Il2CppInspector_CLI:publish /p:Configuration=Release /p:Platform="Any CPU" /p:TargetFramework=net9.0 /p:SelfContained=false /verbosity:minimal
 
       - name: Add Plugins folder (GUI)
         shell: pwsh
@@ -47,11 +47,11 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: Il2CppInspectorRedux.GUI
-          path: Il2CppInspector.GUI/bin/Release/net8.0-windows/win-x64/publish
+          path: Il2CppInspector.GUI/bin/Release/net9.0-windows/win-x64/publish
 
       - name: Upload CLI Artifact
         uses: actions/upload-artifact@v2
         with:
           name: Il2CppInspectorRedux.CLI
-          path: Il2CppInspector.CLI/bin/Release/net8.0/win-x64/publish
+          path: Il2CppInspector.CLI/bin/Release/net9.0/win-x64/publish
 
