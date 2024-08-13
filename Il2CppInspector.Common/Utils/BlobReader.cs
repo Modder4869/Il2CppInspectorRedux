@@ -4,6 +4,8 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using Il2CppInspector.Next;
+using Il2CppInspector.Next.BinaryMetadata;
+using Il2CppInspector.Next.Metadata;
 
 namespace Il2CppInspector.Utils;
 
@@ -154,18 +156,18 @@ public static class BlobReader
     public static Il2CppTypeEnum ReadEncodedTypeEnum(Il2CppInspector inspector, BinaryObjectStream blob,
         out Il2CppTypeDefinition enumType)
     {
-        enumType = null;
+        enumType = default;
 
         var typeEnum = (Il2CppTypeEnum)blob.ReadByte();
         if (typeEnum == Il2CppTypeEnum.IL2CPP_TYPE_ENUM)
         {
             var typeIndex = blob.ReadCompressedInt32();
-            var typeHandle = (uint)inspector.TypeReferences[typeIndex].datapoint;
+            var typeHandle = (uint)inspector.TypeReferences[typeIndex].Data.KlassIndex;
             enumType = inspector.TypeDefinitions[typeHandle];
 
-            var elementTypeHandle = inspector.TypeReferences[enumType.elementTypeIndex].datapoint;
+            var elementTypeHandle = inspector.TypeReferences[enumType.ElementTypeIndex].Data.KlassIndex;
             var elementType = inspector.TypeDefinitions[elementTypeHandle];
-            typeEnum = inspector.TypeReferences[elementType.byvalTypeIndex].type;
+            typeEnum = inspector.TypeReferences[elementType.ByValTypeIndex].Type;
         }
         // This technically also handles SZARRAY (System.Array) and all others by just returning their system type
 

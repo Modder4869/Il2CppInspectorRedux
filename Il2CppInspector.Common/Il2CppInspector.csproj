@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
+	<ImplicitUsings>enable</ImplicitUsings>
+	<LangVersion>preview</LangVersion>
     <AssemblyName>Il2CppInspector.Common</AssemblyName>
     <Authors>Katy Coe</Authors>
     <Version>2023.1</Version>
@@ -47,7 +49,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Bin2Object\Bin2Object\Bin2Object.csproj" PrivateAssets="all" />
-    <ProjectReference Include="..\VersionedSerialization.Generator\VersionedSerialization.Generator.csproj" ReferenceOutputAssembly="false" OutputType="Analyzer" />
+    <ProjectReference Include="..\VersionedSerialization.Generator\VersionedSerialization.Generator.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
     <ProjectReference Include="..\VersionedSerialization\VersionedSerialization.csproj" />
   </ItemGroup>
 

@@ -10,6 +10,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using Il2CppInspector.Next.BinaryMetadata;
 
 namespace Il2CppInspector.Reflection
 {
@@ -112,13 +113,13 @@ namespace Il2CppInspector.Reflection
 
             // Create types and methods from MethodSpec (which incorporates TypeSpec in IL2CPP)
             foreach (var spec in Package.MethodSpecs) {
-                var methodDefinition = MethodsByDefinitionIndex[spec.methodDefinitionIndex];
+                var methodDefinition = MethodsByDefinitionIndex[spec.MethodDefinitionIndex];
                 var declaringType = methodDefinition.DeclaringType;
 
                 // Concrete instance of a generic class
                 // If the class index is not specified, we will later create a generic method in a non-generic class
-                if (spec.classIndexIndex != -1) {
-                    var genericInstance = Package.GenericInstances[spec.classIndexIndex];
+                if (spec.ClassIndexIndex != -1) {
+                    var genericInstance = Package.GenericInstances[spec.ClassIndexIndex];
                     var genericArguments = ResolveGenericArguments(genericInstance);
                     declaringType = declaringType.MakeGenericType(genericArguments);
                 }
@@ -129,8 +130,8 @@ namespace Il2CppInspector.Reflection
                 else
                     method = declaringType.GetMethodByDefinition((MethodInfo)methodDefinition);
 
-                if (spec.methodIndexIndex != -1) {
-                    var genericInstance = Package.GenericInstances[spec.methodIndexIndex];
+                if (spec.MethodIndexIndex != -1) {
+                    var genericInstance = Package.GenericInstances[spec.MethodIndexIndex];
                     var genericArguments = ResolveGenericArguments(genericInstance);
                     method = method.MakeGenericMethod(genericArguments);
                 }
@@ -190,7 +191,7 @@ namespace Il2CppInspector.Reflection
         public TypeInfo[] ResolveGenericArguments(Il2CppGenericInst inst) {
 
             // Get list of pointers to type parameters (both unresolved and concrete)
-            var genericTypeArguments = Package.BinaryImage.ReadMappedArray<ulong>(inst.type_argv, (int)inst.type_argc);
+            var genericTypeArguments = Package.BinaryImage.ReadMappedArray<ulong>(inst.TypeArgv, (int)inst.TypeArgc);
             
             return genericTypeArguments.Select(a => GetTypeFromVirtualAddress(a)).ToArray();
         }
@@ -201,17 +202,17 @@ namespace Il2CppInspector.Reflection
             var image = Package.BinaryImage;
             TypeInfo underlyingType;
 
-            switch (typeRef.type) {
+            switch (typeRef.Type) {
                 // Classes defined in the metadata (reference to a TypeDef)
                 case Il2CppTypeEnum.IL2CPP_TYPE_CLASS:
                 case Il2CppTypeEnum.IL2CPP_TYPE_VALUETYPE:
-                    underlyingType = TypesByDefinitionIndex[typeRef.datapoint]; // klassIndex
+                    underlyingType = TypesByDefinitionIndex[typeRef.Data.KlassIndex]; // klassIndex
                     break;
 
                 // Constructed types
                 case Il2CppTypeEnum.IL2CPP_TYPE_GENERICINST:
                     // TODO: Replace with array load from Il2CppMetadataRegistration.genericClasses
-                    var generic = image.ReadMappedObject<Il2CppGenericClass>(typeRef.datapoint); // Il2CppGenericClass *
+                    var generic = image.ReadMappedObject<Il2CppGenericClass>(typeRef.Data.GenericClass); // Il2CppGenericClass *
 
                     // Get generic type definition
                     TypeInfo genericTypeDef;
@@ -219,49 +220,49 @@ namespace Il2CppInspector.Reflection
                         // It appears that TypeRef can be -1 if the generic depth recursion limit
                         // (--maximum-recursive-generic-depth=) is reached in Il2Cpp. In this case,
                         // no generic instance type is generated, so we just produce a null TypeInfo here.
-                        if ((generic.typeDefinitionIndex & 0xffff_ffff) == 0x0000_0000_ffff_ffff)
+                        if ((generic.TypeDefinitionIndex & 0xffff_ffff) == 0x0000_0000_ffff_ffff)
                             return null;
 
-                        genericTypeDef = TypesByDefinitionIndex[generic.typeDefinitionIndex];
+                        genericTypeDef = TypesByDefinitionIndex[generic.TypeDefinitionIndex];
                     } else {
-                        genericTypeDef = GetTypeFromVirtualAddress(generic.type);
+                        genericTypeDef = GetTypeFromVirtualAddress(generic.Type);
                     }
 
                     // Get the instantiation
                     // TODO: Replace with array load from Il2CppMetadataRegistration.genericInsts
-                    var genericInstance = image.ReadMappedObject<Il2CppGenericInst>(generic.context.class_inst);
+                    var genericInstance = image.ReadMappedObject<Il2CppGenericInst>(generic.Context.ClassInst);
                     var genericArguments = ResolveGenericArguments(genericInstance);
 
                     underlyingType = genericTypeDef.MakeGenericType(genericArguments);
                     break;
                 case Il2CppTypeEnum.IL2CPP_TYPE_ARRAY:
-                    var descriptor = image.ReadMappedObject<Il2CppArrayType>(typeRef.datapoint);
-                    var elementType = GetTypeFromVirtualAddress(descriptor.etype);
-                    underlyingType = elementType.MakeArrayType(descriptor.rank);
+                    var descriptor = image.ReadMappedObject<Il2CppArrayType>(typeRef.Data.ArrayType);
+                    var elementType = GetTypeFromVirtualAddress(descriptor.ElementType);
+                    underlyingType = elementType.MakeArrayType(descriptor.Rank);
                     break;
                 case Il2CppTypeEnum.IL2CPP_TYPE_SZARRAY:
-                    elementType = GetTypeFromVirtualAddress(typeRef.datapoint);
+                    elementType = GetTypeFromVirtualAddress(typeRef.Data.Type);
                     underlyingType = elementType.MakeArrayType(1);
                     break;
                 case Il2CppTypeEnum.IL2CPP_TYPE_PTR:
-                    elementType = GetTypeFromVirtualAddress(typeRef.datapoint);
+                    elementType = GetTypeFromVirtualAddress(typeRef.Data.Type);
                     underlyingType = elementType.MakePointerType();
                     break;
 
                 // Generic type and generic method parameters
                 case Il2CppTypeEnum.IL2CPP_TYPE_VAR:
                 case Il2CppTypeEnum.IL2CPP_TYPE_MVAR:
-                    underlyingType = GetGenericParameterType((int)typeRef.datapoint);
+                    underlyingType = GetGenericParameterType(typeRef.Data.GenericParameterIndex);
                     break;
 
                 // Primitive types
                 default:
-                    underlyingType = GetTypeDefinitionFromTypeEnum(typeRef.type);
+                    underlyingType = GetTypeDefinitionFromTypeEnum(typeRef.Type);
                     break;
             }
 
             // Create a reference type if necessary
-            return typeRef.byref ? underlyingType.MakeByRefType() : underlyingType;
+            return typeRef.ByRef ? underlyingType.MakeByRefType() : underlyingType;
         }
 
         // Basic primitive types are specified via a flag value
@@ -302,14 +303,14 @@ namespace Il2CppInspector.Reflection
                 return GenericParameterTypes[index];
 
             var paramType = Package.GenericParameters[index]; // genericParameterIndex
-            var container = Package.GenericContainers[paramType.ownerIndex];
+            var container = Package.GenericContainers[paramType.OwnerIndex];
             TypeInfo result;
 
-            if (container.is_method == 1) {
-                var owner = MethodsByDefinitionIndex[container.ownerIndex];
+            if (container.IsMethod == 1) {
+                var owner = MethodsByDefinitionIndex[container.OwnerIndex];
                 result = new TypeInfo(owner, paramType);
             } else {
-                var owner = TypesByDefinitionIndex[container.ownerIndex];
+                var owner = TypesByDefinitionIndex[container.OwnerIndex];
                 result = new TypeInfo(owner, paramType);
             }
             GenericParameterTypes[index] = result;
@@ -324,7 +325,7 @@ namespace Il2CppInspector.Reflection
 
             // From v24.1 onwards, token was added to Il2CppCustomAttributeTypeRange and each Il2CppImageDefinition noted the CustomAttributeTypeRanges for the image
             // v29 uses this same system but with CustomAttributeDataRanges instead
-            if (!Package.AttributeIndicesByToken.TryGetValue(asm.ImageDefinition.customAttributeStart, out var indices)
+            if (!Package.AttributeIndicesByToken.TryGetValue(asm.ImageDefinition.CustomAttributeStart, out var indices)
                     || !indices.TryGetValue((uint)token, out var index))
                 return -1;
 
@@ -345,7 +346,7 @@ namespace Il2CppInspector.Reflection
                 case MetadataUsageType.FieldInfo: 
                     var fieldRef = Package.FieldRefs[usage.SourceIndex];
                     var type = GetMetadataUsageType(usage);
-                    var field = type.DeclaredFields.First(f => f.Index == type.Definition.fieldStart + fieldRef.fieldIndex);
+                    var field = type.DeclaredFields.First(f => f.Index == type.Definition.FieldIndex + fieldRef.FieldIndex);
                     return $"{type.Name}.{field.Name}";
 
                 case MetadataUsageType.StringLiteral:
@@ -359,7 +360,7 @@ namespace Il2CppInspector.Reflection
                 case MetadataUsageType.FieldRva:
                     fieldRef = Package.FieldRefs[usage.SourceIndex];
                     type = GetMetadataUsageType(usage);
-                    field = type.DeclaredFields.First(f => f.Index == type.Definition.fieldStart + fieldRef.fieldIndex);
+                    field = type.DeclaredFields.First(f => f.Index == type.Definition.FieldIndex + fieldRef.FieldIndex);
                     return $"{type.Name}.{field.Name}_Default"; // TODO: Find out if this is really needed for anything
             }
             throw new NotImplementedException("Unknown metadata usage type: " + usage.Type);
@@ -369,7 +370,7 @@ namespace Il2CppInspector.Reflection
         public TypeInfo GetMetadataUsageType(MetadataUsage usage) => usage.Type switch {
             MetadataUsageType.Type or MetadataUsageType.TypeInfo => TypesByReferenceIndex[usage.SourceIndex],
             MetadataUsageType.MethodDef or MetadataUsageType.MethodRef => GetMetadataUsageMethod(usage).DeclaringType,
-            MetadataUsageType.FieldInfo or MetadataUsageType.FieldRva => TypesByReferenceIndex[Package.FieldRefs[usage.SourceIndex].typeIndex],
+            MetadataUsageType.FieldInfo or MetadataUsageType.FieldRva => TypesByReferenceIndex[Package.FieldRefs[usage.SourceIndex].TypeIndex],
             _ => throw new InvalidOperationException("Incorrect metadata usage type to retrieve referenced type")
         };
 

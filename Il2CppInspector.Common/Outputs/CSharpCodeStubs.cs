@@ -353,7 +353,7 @@ namespace Il2CppInspector.Outputs
             foreach (var asm in assemblies) {
                 text.Append($"// Image {asm.Index}: {asm.ShortName} - Assembly: {asm.FullName}");
                 if (!SuppressMetadata)
-                    text.Append($" - Types {asm.ImageDefinition.typeStart}-{asm.ImageDefinition.typeStart + asm.ImageDefinition.typeCount - 1}");
+                    text.Append($" - Types {asm.ImageDefinition.TypeStart}-{asm.ImageDefinition.TypeStart + asm.ImageDefinition.TypeCount - 1}");
                 text.AppendLine();
 
                 // Assembly-level attributes
@@ -426,7 +426,7 @@ namespace Il2CppInspector.Outputs
                         sb.Append($" // Metadata: {field.DefaultValueMetadataAddress.ToAddressString()}");
                     // For static array initializers, output metadata address and preview
                     if (field.HasFieldRVA && !SuppressMetadata) {
-                        var preview = model.Package.Metadata.ReadBytes((long) field.DefaultValueMetadataAddress, field.FieldType.Sizes.nativeSize);
+                        var preview = model.Package.Metadata.ReadBytes((long) field.DefaultValueMetadataAddress, field.FieldType.Sizes.NativeSize);
                         sb.Append($" // Static value (base64): {Convert.ToBase64String(preview)} - Metadata: {field.DefaultValueMetadataAddress.ToAddressString()}");
                     }
                     sb.Append("\n");

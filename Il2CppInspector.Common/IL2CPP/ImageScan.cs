@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Il2CppInspector.Next;
+using Il2CppInspector.Next.BinaryMetadata;
 
 namespace Il2CppInspector
 {
@@ -211,12 +212,12 @@ namespace Il2CppInspector
                 // if this changes we'll have to get smarter about disambiguating these two.
                 var cr = Image.ReadMappedObject<Il2CppCodeRegistration>(codeRegistration);
 
-                if (Image.Version == MetadataVersions.V242 && cr.interopDataCount == 0) {
+                if (Image.Version == MetadataVersions.V242 && cr.InteropDataCount == 0) {
                     Image.Version = MetadataVersions.V243;
                     codeRegistration -= ptrSize * 2; // two extra words for WindowsRuntimeFactory
                 }
 
-                if (Image.Version == MetadataVersions.V270 && cr.reversePInvokeWrapperCount > 0x30000)
+                if (Image.Version == MetadataVersions.V270 && cr.ReversePInvokeWrapperCount > 0x30000)
                 {
                     // If reversePInvokeWrapperCount is a pointer, then it's because we're actually on 27.1 and there's a genericAdjustorThunks pointer interfering.
                     // We need to bump version to 27.1 and back up one more pointer.
@@ -229,7 +230,7 @@ namespace Il2CppInspector
             // <= 24.1
             else {
                 // The first item in CodeRegistration is the total number of method pointers
-                vas = FindAllMappedWords(imageBytes, (ulong) metadata.Methods.Count(m => (uint) m.methodIndex != 0xffff_ffff));
+                vas = FindAllMappedWords(imageBytes, (ulong) metadata.Methods.Count(m => (uint) m.MethodIndex != 0xffff_ffff));
 
                 if (!vas.Any())
                     return (0, 0);
@@ -240,7 +241,7 @@ namespace Il2CppInspector
                 foreach (var va in vas) {
                     var cr = Image.ReadMappedObject<Il2CppCodeRegistration>(va);
 
-                    if (cr.customAttributeCount == metadata.AttributeTypeRanges.Length)
+                    if (cr.CustomAttributeCount == metadata.AttributeTypeRanges.Length)
                         codeRegistration = va;
                 }
 
@@ -263,7 +264,7 @@ namespace Il2CppInspector
             if (Image.Version < MetadataVersions.V270)
                 foreach (var va in vas) {
                     var mr = Image.ReadMappedObject<Il2CppMetadataRegistration>(va);
-                    if (mr.metadataUsagesCount == (ulong) metadata.MetadataUsageLists.Length)
+                    if (mr.MetadataUsagesCount == (ulong) metadata.MetadataUsageLists.Length)
                         metadataRegistration = va;
                 }
 

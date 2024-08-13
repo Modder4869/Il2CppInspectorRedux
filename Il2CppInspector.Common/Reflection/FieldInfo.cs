@@ -10,6 +10,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using Il2CppInspector.Next.Metadata;
 
 namespace Il2CppInspector.Reflection {
     public class FieldInfo : MemberInfo // L-TODO: Add support for [ThreadLocal] fields
@@ -96,9 +97,9 @@ namespace Il2CppInspector.Reflection {
         public FieldInfo(Il2CppInspector pkg, int fieldIndex, TypeInfo declaringType) :
             base(declaringType) {
             Definition = pkg.Fields[fieldIndex];
-            MetadataToken = (int) Definition.token;
+            MetadataToken = (int) Definition.Token;
             Index = fieldIndex;
-            Name = pkg.Strings[Definition.nameIndex];
+            Name = pkg.Strings[Definition.NameIndex];
 
             rawOffset = pkg.FieldOffsets[fieldIndex];
             if (0 > rawOffset)
@@ -109,11 +110,11 @@ namespace Il2CppInspector.Reflection {
 
             rootDefinition = this;
 
-            fieldTypeReference = TypeRef.FromReferenceIndex(Assembly.Model, Definition.typeIndex);
-            var fieldType = pkg.TypeReferences[Definition.typeIndex];
+            fieldTypeReference = TypeRef.FromReferenceIndex(Assembly.Model, Definition.TypeIndex);
+            var fieldType = pkg.TypeReferences[Definition.TypeIndex];
 
             // Copy attributes
-            Attributes = (FieldAttributes) fieldType.attrs;
+            Attributes = (FieldAttributes) fieldType.Attrs;
 
             // Default initialization value if present
             if (pkg.FieldDefaultValue.TryGetValue(fieldIndex, out (ulong address, object variant) value)) {
@@ -123,7 +124,7 @@ namespace Il2CppInspector.Reflection {
         }
 
         public FieldInfo(FieldInfo fieldDef, TypeInfo declaringType) : base(declaringType) {
-            if (fieldDef.Definition == null)
+            if (!fieldDef.Definition.IsValid)
                 throw new ArgumentException("Argument must be a bare field definition");
 
             rootDefinition = fieldDef;

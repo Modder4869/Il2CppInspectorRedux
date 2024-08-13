@@ -95,7 +95,7 @@ namespace Il2CppInspector.Reflection
             if (pkg.Version < MetadataVersions.V290)
             {
                 var range = pkg.AttributeTypeRanges[customAttributeIndex];
-                for (var i = range.start; i < range.start + range.count; i++)
+                for (var i = range.Start; i < range.Start + range.Count; i++)
                 {
                     var typeIndex = pkg.AttributeTypeIndices[i];
 
@@ -118,8 +118,8 @@ namespace Il2CppInspector.Reflection
                     var range = pkg.Metadata.AttributeDataRanges[customAttributeIndex];
                     var next = pkg.Metadata.AttributeDataRanges[customAttributeIndex + 1];
 
-                    var startOffset = pkg.Metadata.Header.attributeDataOffset + range.startOffset;
-                    var endOffset = pkg.Metadata.Header.attributeDataOffset + next.startOffset;
+                    var startOffset = (uint)pkg.Metadata.Header.AttributeDataOffset + range.StartOffset;
+                    var endOffset = (uint)pkg.Metadata.Header.AttributeDataOffset + next.StartOffset;
 
                     var reader = new CustomAttributeDataReader(pkg, asm, pkg.Metadata, startOffset, endOffset);
                     if (reader.Count == 0)
@@ -143,13 +143,17 @@ namespace Il2CppInspector.Reflection
         public static IList<CustomAttributeData> GetCustomAttributes(Assembly asm, int token, int customAttributeIndex) =>
                 getCustomAttributes(asm, asm.Model.GetCustomAttributeIndex(asm, token, customAttributeIndex)).ToList();
             
-        public static IList<CustomAttributeData> GetCustomAttributes(Assembly asm) => GetCustomAttributes(asm, asm.MetadataToken, asm.AssemblyDefinition.customAttributeIndex);
-        public static IList<CustomAttributeData> GetCustomAttributes(EventInfo evt) => GetCustomAttributes(evt.Assembly, evt.MetadataToken, evt.Definition.customAttributeIndex);
-        public static IList<CustomAttributeData> GetCustomAttributes(FieldInfo field) => GetCustomAttributes(field.Assembly, field.MetadataToken, field.Definition.customAttributeIndex);
-        public static IList<CustomAttributeData> GetCustomAttributes(MethodBase method) => GetCustomAttributes(method.Assembly, method.MetadataToken, method.Definition.customAttributeIndex);
-        public static IList<CustomAttributeData> GetCustomAttributes(ParameterInfo param) => GetCustomAttributes(param.DeclaringMethod.Assembly, param.MetadataToken, param.Definition.customAttributeIndex);
+        public static IList<CustomAttributeData> GetCustomAttributes(Assembly asm) => GetCustomAttributes(asm, asm.MetadataToken, asm.AssemblyDefinition.CustomAttributeIndex);
+        public static IList<CustomAttributeData> GetCustomAttributes(EventInfo evt) => GetCustomAttributes(evt.Assembly, evt.MetadataToken, evt.Definition.CustomAttributeIndex);
+        public static IList<CustomAttributeData> GetCustomAttributes(FieldInfo field) => GetCustomAttributes(field.Assembly, field.MetadataToken, field.Definition.CustomAttributeIndex);
+        public static IList<CustomAttributeData> GetCustomAttributes(MethodBase method) => GetCustomAttributes(method.Assembly, method.MetadataToken, method.Definition.CustomAttributeIndex);
+        public static IList<CustomAttributeData> GetCustomAttributes(ParameterInfo param) => GetCustomAttributes(param.DeclaringMethod.Assembly, param.MetadataToken, param.Definition.CustomAttributeIndex);
         public static IList<CustomAttributeData> GetCustomAttributes(PropertyInfo prop)
-            => prop.Definition != null ? GetCustomAttributes(prop.Assembly, prop.MetadataToken, prop.Definition.customAttributeIndex) : new List<CustomAttributeData>();
-        public static IList<CustomAttributeData> GetCustomAttributes(TypeInfo type) => type.Definition != null? GetCustomAttributes(type.Assembly, type.MetadataToken, type.Definition.customAttributeIndex) : new List<CustomAttributeData>();
+            => prop.Definition.IsValid 
+                ? GetCustomAttributes(prop.Assembly, prop.MetadataToken, prop.Definition.CustomAttributeIndex) 
+                : new List<CustomAttributeData>();
+        public static IList<CustomAttributeData> GetCustomAttributes(TypeInfo type) => type.Definition.IsValid
+            ? GetCustomAttributes(type.Assembly, type.MetadataToken, type.Definition.CustomAttributeIndex) 
+            : new List<CustomAttributeData>();
     }
 }

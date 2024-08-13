@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using Il2CppInspector.Next.Metadata;
 
 namespace Il2CppInspector.Reflection
 {
@@ -117,9 +118,9 @@ namespace Il2CppInspector.Reflection
         // Initialize a method from a method definition (MethodDef)
         protected MethodBase(Il2CppInspector pkg, int methodIndex, TypeInfo declaringType) : base(declaringType) {
             Definition = pkg.Methods[methodIndex];
-            MetadataToken = (int) Definition.token;
+            MetadataToken = (int) Definition.Token;
             Index = methodIndex;
-            Name = pkg.Strings[Definition.nameIndex];
+            Name = pkg.Strings[Definition.NameIndex];
 
             // Find method pointer
             VirtualAddress = pkg.GetMethodPointer(Assembly.ModuleDefinition, Definition);
@@ -130,28 +131,28 @@ namespace Il2CppInspector.Reflection
             rootDefinition = this;
 
             // Generic method definition?
-            if (Definition.genericContainerIndex >= 0) {
+            if (Definition.GenericContainerIndex >= 0) {
                 IsGenericMethod = true;
 
                 // Store the generic type parameters for later instantiation
-                var container = pkg.GenericContainers[Definition.genericContainerIndex];
-                genericArguments = Enumerable.Range((int)container.genericParameterStart, container.type_argc)
+                var container = pkg.GenericContainers[Definition.GenericContainerIndex];
+                genericArguments = Enumerable.Range(container.GenericParameterStart, container.TypeArgc)
                     .Select(index => Assembly.Model.GetGenericParameterType(index)).ToArray();
                 genericMethodInstances = new Dictionary<TypeInfo[], MethodBase>(new TypeInfo.TypeArgumentsComparer());
                 genericMethodInstances[genericArguments] = this;
             }
 
             // Copy attributes
-            Attributes = (MethodAttributes) Definition.flags;
-            MethodImplementationFlags = (MethodImplAttributes) Definition.iflags;
+            Attributes = (MethodAttributes) Definition.Flags;
+            MethodImplementationFlags = (MethodImplAttributes) Definition.ImplFlags;
             
             // Add arguments
-            for (var p = Definition.parameterStart; p < Definition.parameterStart + Definition.parameterCount; p++)
+            for (var p = Definition.ParameterStart; p < Definition.ParameterStart + Definition.ParameterCount; p++)
                 DeclaredParameters.Add(new ParameterInfo(pkg, p, this));
         }
 
         protected MethodBase(MethodBase methodDef, TypeInfo declaringType) : base(declaringType) {
-            if (methodDef.Definition == null)
+            if (!methodDef.Definition.IsValid)
                 throw new ArgumentException("Argument must be a bare method definition");
 
             rootDefinition = methodDef;

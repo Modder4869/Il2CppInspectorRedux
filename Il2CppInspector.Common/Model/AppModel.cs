@@ -253,11 +253,11 @@ namespace Il2CppInspector.Model
                         case MetadataUsageType.FieldInfo or MetadataUsageType.FieldRva:
                             var fieldRef = TypeModel.Package.FieldRefs[usage.SourceIndex];
                             var fieldType = TypeModel.GetMetadataUsageType(usage);
-                            var field = fieldType.DeclaredFields.First(f => f.Index == fieldType.Definition.fieldStart + fieldRef.fieldIndex);
+                            var field = fieldType.DeclaredFields.First(f => f.Index == fieldType.Definition.FieldIndex + fieldRef.FieldIndex);
 
                             var value = field.HasFieldRVA
                                 ? Convert.ToHexString(Package.Metadata.ReadBytes(
-                                    (long) field.DefaultValueMetadataAddress, field.FieldType.Sizes.nativeSize))
+                                    (long) field.DefaultValueMetadataAddress, field.FieldType.Sizes.NativeSize))
                                 : "";
 
 

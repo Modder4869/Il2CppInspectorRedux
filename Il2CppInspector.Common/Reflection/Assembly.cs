@@ -7,6 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Il2CppInspector.Next.BinaryMetadata;
+using Il2CppInspector.Next.Metadata;
 
 namespace Il2CppInspector.Reflection {
     public class Assembly
@@ -43,37 +45,37 @@ namespace Il2CppInspector.Reflection {
         public Assembly(TypeModel model, int imageIndex) {
             Model = model;
             ImageDefinition = Model.Package.Images[imageIndex];
-            AssemblyDefinition = Model.Package.Assemblies[ImageDefinition.assemblyIndex];
+            AssemblyDefinition = Model.Package.Assemblies[ImageDefinition.AssemblyIndex];
 
-            if (AssemblyDefinition.imageIndex != imageIndex)
+            if (AssemblyDefinition.ImageIndex != imageIndex)
                 throw new InvalidOperationException("Assembly/image index mismatch");
 
-            MetadataToken = (int) AssemblyDefinition.token;
-            Index = ImageDefinition.assemblyIndex;
-            ShortName = Model.Package.Strings[ImageDefinition.nameIndex];
+            MetadataToken = (int) AssemblyDefinition.Token;
+            Index = ImageDefinition.AssemblyIndex;
+            ShortName = Model.Package.Strings[ImageDefinition.NameIndex];
 
             // Get full assembly name
-            var nameDef = AssemblyDefinition.aname;
-            var name = Regex.Replace(Model.Package.Strings[nameDef.nameIndex], @"[^A-Za-z0-9_\-\.()]", "");
-            var culture = Model.Package.Strings[nameDef.cultureIndex];
+            var nameDef = AssemblyDefinition.Aname;
+            var name = Regex.Replace(Model.Package.Strings[nameDef.NameIndex], @"[^A-Za-z0-9_\-\.()]", "");
+            var culture = Model.Package.Strings[nameDef.CultureIndex];
             if (string.IsNullOrEmpty(culture))
                 culture = "neutral";
-            var pkt = BitConverter.ToString(nameDef.publicKeyToken).Replace("-", "");
+            var pkt = Convert.ToHexString(nameDef.PublicKeyToken);
             if (pkt == "0000000000000000")
                 pkt = "null";
-            var version = string.Format($"{nameDef.major}.{nameDef.minor}.{nameDef.build}.{nameDef.revision}");
+            var version = string.Format($"{nameDef.Major}.{nameDef.Minor}.{nameDef.Build}.{nameDef.Revision}");
 
             FullName = string.Format($"{name}, Version={version}, Culture={culture}, PublicKeyToken={pkt.ToLower()}");
 
-            if (ImageDefinition.entryPointIndex != -1) {
+            if (ImageDefinition.EntryPointIndex != -1) {
                 // TODO: Generate EntryPoint method from entryPointIndex
             }
 
             // Find corresponding module (we'll need this for method pointers)
-            ModuleDefinition = Model.Package.Modules?[ShortName];
+            ModuleDefinition = Model.Package.Modules[ShortName];
 
             // Generate types in DefinedTypes from typeStart to typeStart+typeCount-1
-            for (var t = ImageDefinition.typeStart; t < ImageDefinition.typeStart + ImageDefinition.typeCount; t++) {
+            for (var t = ImageDefinition.TypeStart; t < ImageDefinition.TypeStart + ImageDefinition.TypeCount; t++) {
                 var type = new TypeInfo(t, this);
 
                 // Don't add empty module definitions

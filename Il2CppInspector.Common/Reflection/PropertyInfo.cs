@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Il2CppInspector.Next.Metadata;
 
 namespace Il2CppInspector.Reflection {
     public class PropertyInfo : MemberInfo
@@ -52,25 +53,24 @@ namespace Il2CppInspector.Reflection {
             base(declaringType) {
             Index = propIndex;
             Definition = pkg.Properties[propIndex];
-            MetadataToken = (int) Definition.token;
-            Name = pkg.Strings[Definition.nameIndex];
+            MetadataToken = (int) Definition.Token;
+            Name = pkg.Strings[Definition.NameIndex];
             rootDefinition = this;
 
             // Copy attributes
-            Attributes = (PropertyAttributes) Definition.attrs;
+            Attributes = (PropertyAttributes) Definition.Attrs;
 
             // prop.get and prop.set are method indices from the first method of the declaring type
-            if (Definition.get >= 0)
-                GetMethod = declaringType.DeclaredMethods.First(x => x.Index == declaringType.Definition.methodStart + Definition.get);
-            if (Definition.set >= 0)
-                SetMethod = declaringType.DeclaredMethods.First(x => x.Index == declaringType.Definition.methodStart + Definition.set);
+            if (Definition.Get >= 0)
+                GetMethod = declaringType.DeclaredMethods.First(x => x.Index == declaringType.Definition.MethodIndex + Definition.Get);
+            if (Definition.Set >= 0)
+                SetMethod = declaringType.DeclaredMethods.First(x => x.Index == declaringType.Definition.MethodIndex + Definition.Set);
         }
 
         // Create a property based on a get and set method
         public PropertyInfo(MethodInfo getter, MethodInfo setter, TypeInfo declaringType) :
             base(declaringType) {
             Index = -1;
-            Definition = null;
             rootDefinition = this;
 
             Name = (getter ?? setter).Name.Replace(".get_", ".").Replace(".set_", ".");

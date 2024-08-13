@@ -13,6 +13,8 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using Il2CppInspector.Next.BinaryMetadata;
+using Il2CppInspector.Next.Metadata;
 
 namespace Il2CppInspector.Reflection
 {
@@ -53,9 +55,9 @@ namespace Il2CppInspector.Reflection
                     return null;
                 if (IsArray)
                     return Assembly.Model.TypesByFullName["System.Array"];
-                if (Definition != null) {
-                    if (Definition.parentIndex >= 0)
-                        return Assembly.Model.TypesByReferenceIndex[Definition.parentIndex];
+                if (Definition.IsValid) {
+                    if (Definition.ParentIndex >= 0)
+                        return Assembly.Model.TypesByReferenceIndex[Definition.ParentIndex];
                 }
                 if (genericTypeDefinition != null) {
                     return genericTypeDefinition.BaseType.SubstituteGenericArguments(genericArguments);
@@ -73,15 +75,15 @@ namespace Il2CppInspector.Reflection
 
         public override TypeInfo DeclaringType {
             get {
-                if (Definition != null) {
+                if (Definition.IsValid) {
                     /* Type definition */
-                    if (Definition.declaringTypeIndex == -1)
+                    if (Definition.DeclaringTypeIndex == -1)
                         return null;
-                    var type = Assembly.Model.TypesByReferenceIndex[Definition.declaringTypeIndex];
+                    var type = Assembly.Model.TypesByReferenceIndex[Definition.DeclaringTypeIndex];
                     if (type == null) {
                         /* This might happen while initially setting up the types */
-                        var typeRef = Assembly.Model.Package.TypeReferences[Definition.declaringTypeIndex];
-                        type = Assembly.Model.TypesByDefinitionIndex[(int)typeRef.datapoint];
+                        var typeRef = Assembly.Model.Package.TypeReferences[Definition.DeclaringTypeIndex];
+                        type = Assembly.Model.TypesByDefinitionIndex[typeRef.Data.KlassIndex];
                     }
                     return type;
                 }
@@ -253,7 +255,7 @@ namespace Il2CppInspector.Reflection
         public PropertyInfo GetProperty(string name) => DeclaredProperties.FirstOrDefault(p => p.Name == name);
 
         public MethodBase[] GetVTable() {
-            if (Definition != null) {
+            if (!Definition.IsValid) {
                 MetadataUsage[] vt = Assembly.Model.Package.GetVTable(Definition);
                 MethodBase[] res = new MethodBase[vt.Length];
                 for (int i = 0; i < vt.Length; i++) {
@@ -667,7 +669,7 @@ namespace Il2CppInspector.Reflection
         private readonly TypeRef[] implementedInterfaceReferences;
         public IEnumerable<TypeInfo> ImplementedInterfaces {
             get {
-                if (Definition != null)
+                if (Definition.IsValid)
                     return implementedInterfaceReferences.Select(x => x.Value);
                 if (genericTypeDefinition != null)
                     return genericTypeDefinition.ImplementedInterfaces.Select(t => t.SubstituteGenericArguments(genericArguments));
@@ -687,7 +689,7 @@ namespace Il2CppInspector.Reflection
         public bool IsEnum { get; }
         public bool IsGenericParameter { get; }
         public bool IsGenericType { get; }
-        public bool IsGenericTypeDefinition => (Definition != null) && genericArguments.Any();
+        public bool IsGenericTypeDefinition => (Definition.IsValid) && genericArguments.Any();
         public bool IsImport => (Attributes & TypeAttributes.Import) == TypeAttributes.Import;
         public bool IsInterface => (Attributes & TypeAttributes.ClassSemanticsMask) == TypeAttributes.Interface;
         public bool IsNested => (MemberType & MemberTypes.NestedType) == MemberTypes.NestedType;
@@ -746,13 +748,13 @@ namespace Il2CppInspector.Reflection
 
             Definition = pkg.TypeDefinitions[typeIndex];
             Sizes = pkg.TypeDefinitionSizes[typeIndex];
-            MetadataToken = (int) Definition.token;
+            MetadataToken = (int) Definition.Token;
             Index = typeIndex;
-            Namespace = Regex.Replace(pkg.Strings[Definition.namespaceIndex], @"[^A-Za-z0-9_\-\.<>{}]", "");
-            Name = pkg.Strings[Definition.nameIndex];
+            Namespace = Regex.Replace(pkg.Strings[Definition.NamespaceIndex], @"[^A-Za-z0-9_\-\.<>{}]", "");
+            Name = pkg.Strings[Definition.NameIndex];
 
             // Nested type?
-            if (Definition.declaringTypeIndex >= 0) {
+            if (Definition.DeclaringTypeIndex >= 0) {
                 MemberType |= MemberTypes.NestedType;
             }
 
@@ -760,14 +762,14 @@ namespace Il2CppInspector.Reflection
             Assembly.Model.TypesByDefinitionIndex[Index] = this;
 
             // Generic type definition?
-            if (Definition.genericContainerIndex >= 0) {
+            if (Definition.GenericContainerIndex >= 0) {
                 IsGenericType = true;
                 IsGenericParameter = false;
 
                 // Store the generic type parameters for later instantiation
-                var container = pkg.GenericContainers[Definition.genericContainerIndex];
+                var container = pkg.GenericContainers[Definition.GenericContainerIndex];
 
-                genericArguments = Enumerable.Range((int)container.genericParameterStart, container.type_argc)
+                genericArguments = Enumerable.Range((int)container.GenericParameterStart, container.TypeArgc)
                     .Select(index => Assembly.Model.GetGenericParameterType(index)).ToArray();
                 genericTypeInstances = new Dictionary<TypeInfo[], TypeInfo>(new TypeArgumentsComparer());
                 genericTypeInstances[genericArguments] = this;
@@ -777,12 +779,12 @@ namespace Il2CppInspector.Reflection
             Assembly.Model.TypesByFullName[FullName] = this;
 
             // Copy attributes
-            Attributes = (TypeAttributes) Definition.flags;
+            Attributes = (TypeAttributes) Definition.Flags;
 
             // Enumerations - bit 1 of bitfield indicates this (also the baseTypeReference will be System.Enum)
-            if (((Definition.bitfield >> 1) & 1) == 1) {
+            if (Definition.Bitfield.EnumType) {
                 IsEnum = true;
-                enumUnderlyingTypeReference = TypeRef.FromReferenceIndex(Assembly.Model, Definition.elementTypeIndex);
+                enumUnderlyingTypeReference = TypeRef.FromReferenceIndex(Assembly.Model, Definition.ElementTypeIndex);
             }
 
             // Pass-by-reference type
@@ -792,24 +794,24 @@ namespace Il2CppInspector.Reflection
             IsByRef = false;
 
             // Add all implemented interfaces
-            implementedInterfaceReferences = new TypeRef[Definition.interfaces_count];
-            for (var i = 0; i < Definition.interfaces_count; i++)
-                implementedInterfaceReferences[i] = TypeRef.FromReferenceIndex(Assembly.Model, pkg.InterfaceUsageIndices[Definition.interfacesStart + i]);
+            implementedInterfaceReferences = new TypeRef[Definition.InterfacesCount];
+            for (var i = 0; i < Definition.InterfacesCount; i++)
+                implementedInterfaceReferences[i] = TypeRef.FromReferenceIndex(Assembly.Model, pkg.InterfaceUsageIndices[Definition.InterfacesIndex + i]);
 
             // Add all nested types
-            declaredNestedTypes = new TypeRef[Definition.nested_type_count];
-            for (var n = 0; n < Definition.nested_type_count; n++)
-                declaredNestedTypes[n] = TypeRef.FromDefinitionIndex(Assembly.Model, pkg.NestedTypeIndices[Definition.nestedTypesStart + n]);
+            declaredNestedTypes = new TypeRef[Definition.NestedTypeCount];
+            for (var n = 0; n < Definition.NestedTypeCount; n++)
+                declaredNestedTypes[n] = TypeRef.FromDefinitionIndex(Assembly.Model, pkg.NestedTypeIndices[Definition.NestedTypeIndex + n]);
 
             // Add all fields
             declaredFields = new List<FieldInfo>();
-            for (var f = Definition.fieldStart; f < Definition.fieldStart + Definition.field_count; f++)
+            for (var f = Definition.FieldIndex; f < Definition.FieldIndex + Definition.FieldCount; f++)
                 declaredFields.Add(new FieldInfo(pkg, f, this));
 
             // Add all methods
             declaredConstructors = new List<ConstructorInfo>();
             declaredMethods = new List<MethodInfo>();
-            for (var m = Definition.methodStart; m < Definition.methodStart + Definition.method_count; m++) {
+            for (var m = Definition.MethodIndex; m < Definition.MethodIndex + Definition.MethodCount; m++) {
                 var method = new MethodInfo(pkg, m, this);
                 if (method.Name == ConstructorInfo.ConstructorName || method.Name == ConstructorInfo.TypeConstructorName)
                     declaredConstructors.Add(new ConstructorInfo(pkg, m, this));
@@ -819,7 +821,7 @@ namespace Il2CppInspector.Reflection
 
             // Add all properties
             declaredProperties = new List<PropertyInfo>();
-            for (var p = Definition.propertyStart; p < Definition.propertyStart + Definition.property_count; p++)
+            for (var p = Definition.PropertyIndex; p < Definition.PropertyIndex + Definition.PropertyCount; p++)
                 declaredProperties.Add(new PropertyInfo(pkg, p, this));
 
             // There are rare cases when explicitly implemented interface properties
@@ -856,7 +858,7 @@ namespace Il2CppInspector.Reflection
 
             // Add all events
             declaredEvents = new List<EventInfo>();
-            for (var e = Definition.eventStart; e < Definition.eventStart + Definition.event_count; e++)
+            for (var e = Definition.EventIndex; e < Definition.EventIndex + Definition.EventCount; e++)
                 declaredEvents.Add(new EventInfo(pkg, e, this));
 
             // TODO: Events have the same edge case issue as properties above, eg. PoGo 0.35.0
@@ -937,21 +939,21 @@ namespace Il2CppInspector.Reflection
             Namespace = declaringType.Namespace;
 
             // Special constraints
-            GenericParameterAttributes = (GenericParameterAttributes)param.flags;
+            GenericParameterAttributes = (GenericParameterAttributes)param.Flags;
 
             // Type constraints
-            genericParameterConstraints = new TypeRef[param.constraintsCount];
-            for (int c = 0; c < param.constraintsCount; c++)
-                genericParameterConstraints[c] = TypeRef.FromReferenceIndex(Assembly.Model, Assembly.Model.Package.GenericConstraintIndices[param.constraintsStart + c]);
+            genericParameterConstraints = new TypeRef[param.ConstraintsCount];
+            for (int c = 0; c < param.ConstraintsCount; c++)
+                genericParameterConstraints[c] = TypeRef.FromReferenceIndex(Assembly.Model, Assembly.Model.Package.GenericConstraintIndices[param.ConstraintsStart + c]);
 
             // Base type of object (set by default)
             // TODO: ImplementedInterfaces should be set to interface types constraints
 
             // Name of parameter
-            Name = Assembly.Model.Package.Strings[param.nameIndex];
+            Name = Assembly.Model.Package.Strings[param.NameIndex];
 
             // Position
-            GenericParameterPosition = param.num;
+            GenericParameterPosition = param.Num;
 
             IsGenericParameter = true;
             IsGenericType = false;

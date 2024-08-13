@@ -7,6 +7,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Il2CppInspector.Next.Metadata;
 
 namespace Il2CppInspector.Reflection
 {
@@ -41,25 +42,25 @@ namespace Il2CppInspector.Reflection
         public EventInfo(Il2CppInspector pkg, int eventIndex, TypeInfo declaringType) :
             base(declaringType) {
             Definition = pkg.Events[eventIndex];
-            MetadataToken = (int) Definition.token;
+            MetadataToken = (int) Definition.Token;
             Index = eventIndex;
-            Name = pkg.Strings[Definition.nameIndex];
+            Name = pkg.Strings[Definition.NameIndex];
             rootDefinition = this;
 
-            eventTypeReference = TypeRef.FromReferenceIndex(Assembly.Model, Definition.typeIndex);
-            var eventType = pkg.TypeReferences[Definition.typeIndex];
+            eventTypeReference = TypeRef.FromReferenceIndex(Assembly.Model, Definition.TypeIndex);
+            var eventType = pkg.TypeReferences[Definition.TypeIndex];
 
             // Copy attributes
-            Attributes = (EventAttributes) eventType.attrs;
+            Attributes = (EventAttributes) eventType.Attrs;
 
             // NOTE: This relies on methods being added to TypeInfo.DeclaredMethods in the same order they are defined in the Il2Cpp metadata
             // add, remove and raise are method indices from the first method of the declaring type
-            if (Definition.add >= 0)
-                AddMethod = declaringType.DeclaredMethods.First(x => x.Index == declaringType.Definition.methodStart + Definition.add);
-            if (Definition.remove >= 0)
-                RemoveMethod = declaringType.DeclaredMethods.First(x => x.Index == declaringType.Definition.methodStart + Definition.remove);
-            if (Definition.raise >= 0)
-                RaiseMethod = declaringType.DeclaredMethods.First(x => x.Index == declaringType.Definition.methodStart + Definition.raise);
+            if (Definition.Add >= 0)
+                AddMethod = declaringType.DeclaredMethods.First(x => x.Index == declaringType.Definition.MethodIndex + Definition.Add);
+            if (Definition.Remove >= 0)
+                RemoveMethod = declaringType.DeclaredMethods.First(x => x.Index == declaringType.Definition.MethodIndex + Definition.Remove);
+            if (Definition.Raise >= 0)
+                RaiseMethod = declaringType.DeclaredMethods.First(x => x.Index == declaringType.Definition.MethodIndex + Definition.Raise);
         }
 
         public EventInfo(EventInfo eventDef, TypeInfo declaringType) : base(declaringType) {

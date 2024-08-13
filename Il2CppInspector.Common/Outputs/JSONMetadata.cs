@@ -184,7 +184,7 @@ namespace Il2CppInspector.Outputs
             // TODO: In the future, add data ranges for the entire IL2CPP metadata tree
             writeArray("arrayMetadata", () => {
                 if (model.Package.Version >= MetadataVersions.V242) {
-                    writeObject(() => writeTypedArray(binary.CodeRegistration.pcodeGenModules, binary.Modules.Count, "struct Il2CppCodeGenModule *", "g_CodeGenModules"));
+                    writeObject(() => writeTypedArray(binary.CodeRegistration.CodeGenModules, binary.Modules.Count, "struct Il2CppCodeGenModule *", "g_CodeGenModules"));
                 }
             }, "IL2CPP Array Metadata");
         }

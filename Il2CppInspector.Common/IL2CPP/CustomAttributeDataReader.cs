@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using dnlib.DotNet;
+using Il2CppInspector.Next.BinaryMetadata;
+using Il2CppInspector.Next.Metadata;
 using Il2CppInspector.Reflection;
 using Il2CppInspector.Utils;
 using NoisyCowStudios.Bin2Object;
@@ -143,7 +145,7 @@ namespace Il2CppInspector
         }
 
         private TypeInfo ConvertTypeDef(Il2CppTypeDefinition typeDef, Il2CppTypeEnum type)
-            => typeDef == null
+            => typeDef.IsValid
                 ? _assembly.Model.GetTypeDefinitionFromTypeEnum(type)
                 : _assembly.Model.TypesByDefinitionIndex[Array.IndexOf(_inspector.TypeDefinitions, typeDef)];
 

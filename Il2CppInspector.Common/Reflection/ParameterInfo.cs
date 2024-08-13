@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Il2CppInspector.Next.Metadata;
 
 namespace Il2CppInspector.Reflection
 {
@@ -64,28 +65,28 @@ namespace Il2CppInspector.Reflection
 
             if (paramIndex == -1) {
                 Position = -1;
-                paramTypeReference = TypeRef.FromReferenceIndex(declaringMethod.Assembly.Model, declaringMethod.Definition.returnType);
-                MetadataToken = declaringMethod.Definition.returnParameterToken;
+                paramTypeReference = TypeRef.FromReferenceIndex(declaringMethod.Assembly.Model, declaringMethod.Definition.ReturnType);
+                MetadataToken = (int)declaringMethod.Definition.ReturnParameterToken;
                 Attributes |= ParameterAttributes.Retval;
                 return;
             }
 
             Definition = pkg.Params[Index];
-            MetadataToken = (int) Definition.token;
-            Name = pkg.Strings[Definition.nameIndex];
+            MetadataToken = (int) Definition.Token;
+            Name = pkg.Strings[Definition.NameIndex];
             rootDefinition = this;
 
             // Handle unnamed/obfuscated parameter names
             if (string.IsNullOrEmpty(Name))
                 Name = string.Format($"param_{Index:x8}");
 
-            Position = paramIndex - declaringMethod.Definition.parameterStart;
-            paramTypeReference = TypeRef.FromReferenceIndex(declaringMethod.Assembly.Model, Definition.typeIndex);
+            Position = paramIndex - declaringMethod.Definition.ParameterStart;
+            paramTypeReference = TypeRef.FromReferenceIndex(declaringMethod.Assembly.Model, Definition.TypeIndex);
 
-            var paramType = pkg.TypeReferences[Definition.typeIndex];
+            var paramType = pkg.TypeReferences[Definition.TypeIndex];
 
             // Copy attributes
-            Attributes = (ParameterAttributes) paramType.attrs;
+            Attributes = (ParameterAttributes) paramType.Attrs;
 
             // Default initialization value if present
             if (pkg.ParameterDefaultValue.TryGetValue(paramIndex, out (ulong address, object variant) value)) {
