@@ -10,7 +10,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Il2CppInspector.Next;
 using NoisyCowStudios.Bin2Object;
+using VersionedSerialization;
 
 namespace Il2CppInspector
 {
@@ -86,9 +88,9 @@ namespace Il2CppInspector
             }
 
             // Set object versioning for Bin2Object from metadata version
-            Version = Header.version;
+            Version = new StructVersion(Header.version);
 
-            if (Version < 16 || Version > 31) {
+            if (Version < MetadataVersions.V160 || Version > MetadataVersions.V310) {
                 throw new InvalidOperationException($"The supplied metadata file is not of a supported version ({Header.version}).");
             }
 
@@ -108,8 +110,8 @@ namespace Il2CppInspector
                 var realHeaderLength = Header.stringLiteralOffset;
 
                 if (realHeaderLength != Sizeof(typeof(Il2CppGlobalMetadataHeader))) {
-                    if (Version == 24.0) {
-                        Version = 24.2;
+                    if (Version == MetadataVersions.V240) {
+                        Version = MetadataVersions.V242;
                         Header = ReadObject<Il2CppGlobalMetadataHeader>(0);
                     }
                 }
@@ -120,16 +122,16 @@ namespace Il2CppInspector
             }
             
             // Load all the relevant metadata using offsets provided in the header
-            if (Version >= 16)
+            if (Version >= MetadataVersions.V160)
                 Images = ReadArray<Il2CppImageDefinition>(Header.imagesOffset,  Header.imagesCount / Sizeof(typeof(Il2CppImageDefinition)));
 
             // As an additional sanity check, all images in the metadata should have Mono.Cecil.MetadataToken == 1
             // In metadata v24.1, two extra fields were added which will cause the below test to fail.
             // In that case, we can then adjust the version number and reload
             // Tokens were introduced in v19 - we don't bother testing earlier versions
-            if (Version >= 19 && Images.Any(x => x.token != 1))
-                if (Version == 24.0) {
-                    Version = 24.1;
+            if (Version >= MetadataVersions.V190 && Images.Any(x => x.token != 1))
+                if (Version == MetadataVersions.V240) {
+                    Version = MetadataVersions.V241;
 
                     // No need to re-read the header, it's the same for both sub-versions
                     Images = ReadArray<Il2CppImageDefinition>(Header.imagesOffset, Header.imagesCount / Sizeof(typeof(Il2CppImageDefinition)));
@@ -153,42 +155,61 @@ namespace Il2CppInspector
             InterfaceOffsets = ReadArray<Il2CppInterfaceOffsetPair>(Header.interfaceOffsetsOffset, Header.interfaceOffsetsCount / Sizeof(typeof(Il2CppInterfaceOffsetPair)));
             VTableMethodIndices = ReadArray<uint>(Header.vtableMethodsOffset, Header.vtableMethodsCount / sizeof(uint));
 
-            if (Version >= 16) {
+            if (Version >= MetadataVersions.V160) {
                 // In v24.4 hashValueIndex was removed from Il2CppAssemblyNameDefinition, which is a field in Il2CppAssemblyDefinition
                 // The number of images and assemblies should be the same. If they are not, we deduce that we are using v24.4
                 // Note the version comparison matches both 24.2 and 24.3 here since 24.3 is tested for during binary loading
                 var assemblyCount = Header.assembliesCount / Sizeof(typeof(Il2CppAssemblyDefinition));
                 var changedAssemblyDefStruct = false;
-                if ((Version == 24.1 || Version == 24.2 || Version == 24.3) && assemblyCount < Images.Length)
+                if ((Version == MetadataVersions.V241 || Version == MetadataVersions.V242 || Version == MetadataVersions.V243) && assemblyCount < Images.Length)
                 {
-                    if (Version == 24.1)
+                    if (Version == MetadataVersions.V241)
                         changedAssemblyDefStruct = true;
-                    Version = 24.4;
+                    Version = MetadataVersions.V244;
                 }
 
                 Assemblies = ReadArray<Il2CppAssemblyDefinition>(Header.assembliesOffset, Images.Length);
 
                 if (changedAssemblyDefStruct)
-                    Version = 24.1;
+                    Version = MetadataVersions.V241;
 
                 ParameterDefaultValues = ReadArray<Il2CppParameterDefaultValue>(Header.parameterDefaultValuesOffset, Header.parameterDefaultValuesCount / Sizeof(typeof(Il2CppParameterDefaultValue)));
             }
-            if (Version >= 19 && Version < 27) {
+            if (Version >= MetadataVersions.V190 && Version < MetadataVersions.V270) {
                 MetadataUsageLists = ReadArray<Il2CppMetadataUsageList>(Header.metadataUsageListsOffset, Header.metadataUsageListsCount / Sizeof(typeof(Il2CppMetadataUsageList)));
                 MetadataUsagePairs = ReadArray<Il2CppMetadataUsagePair>(Header.metadataUsagePairsOffset, Header.metadataUsagePairsCount / Sizeof(typeof(Il2CppMetadataUsagePair)));
             }
-            if (Version >= 19) {
+            if (Version >= MetadataVersions.V190) {
                 FieldRefs = ReadArray<Il2CppFieldRef>(Header.fieldRefsOffset, Header.fieldRefsCount / Sizeof(typeof(Il2CppFieldRef)));
             }
-            if (Version >= 21 && Version < 29) {
+            if (Version >= MetadataVersions.V210 && Version < MetadataVersions.V290) {
                 AttributeTypeIndices = ReadArray<int>(Header.attributeTypesOffset, Header.attributeTypesCount / sizeof(int));
                 AttributeTypeRanges = ReadArray<Il2CppCustomAttributeTypeRange>(Header.attributesInfoOffset, Header.attributesInfoCount / Sizeof(typeof(Il2CppCustomAttributeTypeRange)));
             }
 
-            if (Version >= 29)
+            if (Version >= MetadataVersions.V290)
             {
                 AttributeDataRanges = ReadArray<Il2CppCustomAttributeDataRange>(Header.attributeDataRangeOffset,
                     Header.attributeDataRangeSize / Sizeof(typeof(Il2CppCustomAttributeDataRange)));
+            }
+
+            if (Version == MetadataVersions.V290 || Version == MetadataVersions.V310)
+            {
+                // 29.2/31.2 added a new isUnmanagedCallersOnly flag to Il2CppMethodDefinition.
+                // This offsets all subsequent entries by one - we can detect this by checking the
+                // top token byte (which should always be 0x06).
+
+                if (Methods.Length >= 2)
+                {
+                    var secondToken = Methods[1].token;
+                    if (secondToken >> 24 != 0x6)
+                    {
+                        Version = new StructVersion(Version.Major, 1, Version.Tag);
+
+                        Methods = ReadArray<Il2CppMethodDefinition>(Header.methodsOffset,
+                            Header.methodsCount / Sizeof(typeof(Il2CppMethodDefinition)));
+                    }
+                }
             }
 
             // Get all metadata strings
@@ -229,7 +250,9 @@ namespace Il2CppInspector
 
         public int Sizeof(Type type) => Sizeof(type, Version);
         
-        public int Sizeof(Type type, double metadataVersion, int longSizeBytes = 8) {
+        public int Sizeof(Type type, StructVersion metadataVersion, int longSizeBytes = 8)
+        {
+            var doubleRepresentation = metadataVersion.AsDouble;
 
             if (Reader.ObjectMappings.TryGetValue(type, out var streamType))
                 type = streamType;
@@ -239,7 +262,7 @@ namespace Il2CppInspector
             {
                 // Only process fields for our selected object versioning (always process if none supplied)
                 var versions = i.GetCustomAttributes<VersionAttribute>(false).Select(v => (v.Min, v.Max)).ToList();
-                if (versions.Any() && !versions.Any(v => (v.Min <= metadataVersion || v.Min == -1) && (v.Max >= metadataVersion || v.Max == -1)))
+                if (versions.Any() && !versions.Any(v => (v.Min <= doubleRepresentation || v.Min == -1) && (v.Max >= doubleRepresentation || v.Max == -1)))
                     continue;
 
                 if (i.FieldType == typeof(long) || i.FieldType == typeof(ulong))

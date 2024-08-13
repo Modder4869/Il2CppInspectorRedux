@@ -9,6 +9,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Il2CppInspector.Next;
 
 namespace Il2CppInspector
 {
@@ -120,7 +121,7 @@ namespace Il2CppInspector
 
             // Find CodeRegistration
             // >= 24.2
-            if (metadata.Version >= 24.2) {
+            if (metadata.Version >= MetadataVersions.V242) {
 
                 // < 27: mscorlib.dll is always the first CodeGenModule
                 // >= 27: mscorlib.dll is always the last CodeGenModule (Assembly-CSharp.dll is always the first but non-Unity builds don't have this DLL)
@@ -137,7 +138,7 @@ namespace Il2CppInspector
                         // Unwind from string pointer -> CodeGenModule -> CodeGenModules + x
                         foreach (var potentialCodeGenModules in FindAllPointerChains(imageBytes, va, 2))
                         {
-                            if (metadata.Version >= 27)
+                            if (metadata.Version >= MetadataVersions.V270)
                             {
                                 for (int i = imagesCount - 1; i >= 0; i--)
                                 {
@@ -210,16 +211,16 @@ namespace Il2CppInspector
                 // if this changes we'll have to get smarter about disambiguating these two.
                 var cr = Image.ReadMappedObject<Il2CppCodeRegistration>(codeRegistration);
 
-                if (Image.Version == 24.2 && cr.interopDataCount == 0) {
-                    Image.Version = 24.3;
+                if (Image.Version == MetadataVersions.V242 && cr.interopDataCount == 0) {
+                    Image.Version = MetadataVersions.V243;
                     codeRegistration -= ptrSize * 2; // two extra words for WindowsRuntimeFactory
                 }
 
-                if (Image.Version == 27 && cr.reversePInvokeWrapperCount > 0x30000)
+                if (Image.Version == MetadataVersions.V270 && cr.reversePInvokeWrapperCount > 0x30000)
                 {
                     // If reversePInvokeWrapperCount is a pointer, then it's because we're actually on 27.1 and there's a genericAdjustorThunks pointer interfering.
                     // We need to bump version to 27.1 and back up one more pointer.
-                    Image.Version = 27.1;
+                    Image.Version = MetadataVersions.V271;
                     codeRegistration -= ptrSize;
                 }
             }
@@ -259,7 +260,7 @@ namespace Il2CppInspector
             vas = FindAllMappedWords(imageBytes, typesLength).Select(a => a - mrSize + ptrSize * 4);
 
             // >= 19 && < 27
-            if (Image.Version < 27)
+            if (Image.Version < MetadataVersions.V270)
                 foreach (var va in vas) {
                     var mr = Image.ReadMappedObject<Il2CppMetadataRegistration>(va);
                     if (mr.metadataUsagesCount == (ulong) metadata.MetadataUsageLists.Length)

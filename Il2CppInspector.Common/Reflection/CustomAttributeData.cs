@@ -4,6 +4,7 @@
     All rights reserved.
 */
 
+using Il2CppInspector.Next;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -88,10 +89,10 @@ namespace Il2CppInspector.Reflection
             var pkg = asm.Model.Package;
 
             // Attribute type ranges weren't included before v21 (customASttributeGenerators was though)
-            if (pkg.Version < 21)
+            if (pkg.Version < MetadataVersions.V210)
                 yield break;
 
-            if (pkg.Version < 29)
+            if (pkg.Version < MetadataVersions.V290)
             {
                 var range = pkg.AttributeTypeRanges[customAttributeIndex];
                 for (var i = range.start; i < range.start + range.count; i++)

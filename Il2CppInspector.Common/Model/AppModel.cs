@@ -12,6 +12,7 @@ using System.Linq;
 using Aron.Weiler;
 using Il2CppInspector.Cpp;
 using Il2CppInspector.Cpp.UnityHeaders;
+using Il2CppInspector.Next;
 using Il2CppInspector.Reflection;
 
 namespace Il2CppInspector.Model
@@ -54,7 +55,7 @@ namespace Il2CppInspector.Model
         public Dictionary<ulong, (FieldInfo Field, string Value)> Fields { get; } = [];
         public Dictionary<ulong, (FieldInfo Field, string Value)> FieldRvas { get; } = []; 
 
-        public bool StringIndexesAreOrdinals => Package.Version < 19;
+        public bool StringIndexesAreOrdinals => Package.Version < MetadataVersions.V190;
 
         // The .NET type model for the application
         public TypeModel TypeModel { get; }
@@ -270,7 +271,7 @@ namespace Il2CppInspector.Model
                 }
 
             // Add string literals for metadata <19 to the model
-            if (Package.Version < 19) {
+            if (Package.Version < MetadataVersions.V190) {
                 /* Version < 19 calls `il2cpp_codegen_string_literal_from_index` to get string literals.
                  * Unfortunately, metadata references are just loose globals in Il2CppMetadataUsage.cpp
                  * so we can't automatically name those. Next best thing is to define an enum for the strings. */

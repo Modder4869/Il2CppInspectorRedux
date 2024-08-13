@@ -4,6 +4,7 @@
     All rights reserved.
 */
 
+using Il2CppInspector.Next;
 using System;
 using System.Linq;
 
@@ -34,7 +35,7 @@ namespace Il2CppInspector
                     return (0, 0);
 
                 // Jump to Il2CppCodegenRegistration
-                if(image.Version < 21) {
+                if(image.Version < MetadataVersions.V210) {
                     image.Position = image.MapVATR((ulong)pCgr + 1);
                     metadata = image.ReadUInt32();
                     image.Position = image.MapVATR((ulong)pCgr + 6);

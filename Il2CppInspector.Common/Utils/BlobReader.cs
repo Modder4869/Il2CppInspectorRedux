@@ -3,6 +3,7 @@ using System.Text;
 using System;
 using System.Diagnostics;
 using System.IO;
+using Il2CppInspector.Next;
 
 namespace Il2CppInspector.Utils;
 
@@ -111,7 +112,7 @@ public static class BlobReader
 
         int ReadInt32()
         {
-            if (blob.Version >= 29)
+            if (blob.Version >= MetadataVersions.V290)
             {
                 var address = blob.Position;
 
@@ -131,7 +132,7 @@ public static class BlobReader
 
         uint ReadUInt32()
         {
-            if (blob.Version >= 29)
+            if (blob.Version >= MetadataVersions.V290)
             {
                 var address = blob.Position;
 

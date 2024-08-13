@@ -6,6 +6,8 @@ public readonly struct StructVersion(int major = 0, int minor = 0, string? tag =
     public readonly int Minor = minor;
     public readonly string? Tag = tag;
 
+    public double AsDouble => Major + Minor / 10.0;
+
     #region Equality operators
 
     public static bool operator ==(StructVersion left, StructVersion right)
@@ -42,8 +44,16 @@ public readonly struct StructVersion(int major = 0, int minor = 0, string? tag =
     public static implicit operator StructVersion(string value)
     {
         var versionParts = value.Split('.');
-        if (versionParts.Length is 1 or > 2)
+        if (versionParts.Length > 2)
             throw new InvalidOperationException("Invalid version string.");
+
+        if (versionParts.Length == 1)
+        {
+            if (!int.TryParse(versionParts[0], out var version))
+                throw new InvalidOperationException("Invalid single-number version string.");
+
+            return new StructVersion(version);
+        }
 
         var tagParts = versionParts[1].Split("-");
         if (tagParts.Length > 2) 

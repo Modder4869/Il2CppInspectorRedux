@@ -11,12 +11,13 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using NoisyCowStudios.Bin2Object;
+using VersionedSerialization;
 
 namespace Il2CppInspector
 {
     public interface IFileFormatStream
     {
-        double Version { get; set; }
+        StructVersion Version { get; set; }
         long Length { get; }
         uint NumImages { get; }
         string DefaultFilename { get; }

@@ -5,6 +5,7 @@
     All rights reserved.
 */
 
+using Il2CppInspector.Next;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -342,10 +343,10 @@ namespace Il2CppInspector
             // In v21 and later, R0-R2 + PC will be set and they will be the only registers set
             // Pre-v21, R0-R1 + PC will be the only registers set
 
-            if (image.Version >= 21 && regs.Count == 4 && regs.TryGetValue(0, out r0) && regs.TryGetValue(1, out r1) && regs.TryGetValue(2, out uint _))
+            if (image.Version >= MetadataVersions.V210 && regs.Count == 4 && regs.TryGetValue(0, out r0) && regs.TryGetValue(1, out r1) && regs.TryGetValue(2, out uint _))
                 return (r0 & 0xffff_fffe, r1 & 0xffff_fffe);
 
-            if (image.Version < 21 && regs.Count == 3 && regs.TryGetValue(0, out r0) && regs.TryGetValue(1, out r1))
+            if (image.Version < MetadataVersions.V210 && regs.Count == 3 && regs.TryGetValue(0, out r0) && regs.TryGetValue(1, out r1))
                 return (r0 & 0xffff_fffe, r1 & 0xffff_fffe);
 
             return (0, 0);

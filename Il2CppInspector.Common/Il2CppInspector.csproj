@@ -47,6 +47,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Bin2Object\Bin2Object\Bin2Object.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\VersionedSerialization.Generator\VersionedSerialization.Generator.csproj" ReferenceOutputAssembly="false" OutputType="Analyzer" />
+    <ProjectReference Include="..\VersionedSerialization\VersionedSerialization.csproj" />
   </ItemGroup>
 
   <ItemGroup>

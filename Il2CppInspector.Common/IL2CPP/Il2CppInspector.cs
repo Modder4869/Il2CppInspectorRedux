@@ -4,6 +4,7 @@
     All rights reserved.
 */
 
+using Il2CppInspector.Next;
 using Il2CppInspector.Utils;
 using NoisyCowStudios.Bin2Object;
 using System;
@@ -12,6 +13,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using VersionedSerialization;
 
 namespace Il2CppInspector
 {
@@ -31,7 +33,9 @@ namespace Il2CppInspector
         public List<MetadataUsage> MetadataUsages { get; }
 
         // Shortcuts
-        public double Version => Math.Max(Metadata.Version, Binary.Image.Version);
+        public StructVersion Version => Metadata.Version > Binary.Image.Version 
+            ? Metadata.Version
+            : Binary.Image.Version;
 
         public Dictionary<int, string> Strings => Metadata.Strings;
         public string[] StringLiterals => Metadata.StringLiterals;
@@ -93,11 +97,11 @@ namespace Il2CppInspector
         private List<MetadataUsage> buildMetadataUsages()
         {
             // No metadata usages for versions < 19
-            if (Version < 19)
+            if (Version < MetadataVersions.V190)
                 return null;
 
             // Metadata usages are lazily initialized during runtime for versions >= 27
-            if (Version >= 27)
+            if (Version >= MetadataVersions.V270)
                 return buildLateBindingMetadataUsages();
 
             // Version >= 19 && < 27
@@ -217,9 +221,9 @@ namespace Il2CppInspector
             }
 
             // Build list of custom attribute generators
-            if (Version < 27)
+            if (Version < MetadataVersions.V270)
                 CustomAttributeGenerators = Binary.CustomAttributeGenerators;
-            else if (Version < 29)
+            else if (Version < MetadataVersions.V290)
             {
                 var cagCount = Images.Sum(i => i.customAttributeCount);
                 CustomAttributeGenerators = new ulong[cagCount];
@@ -243,7 +247,7 @@ namespace Il2CppInspector
 
             // Get sorted list of function pointers from all sources
             // TODO: This does not include IL2CPP API functions
-            var sortedFunctionPointers = (Version <= 24.1)?
+            var sortedFunctionPointers = (Version <= MetadataVersions.V241) ?
             Binary.GlobalMethodPointers.Select(getDecodedAddress).ToList() :
             Binary.ModuleMethodPointers.SelectMany(module => module.Value).Select(getDecodedAddress).ToList();
 
@@ -261,7 +265,7 @@ namespace Il2CppInspector
             FunctionAddresses.Add(sortedFunctionPointers[^1], sortedFunctionPointers[^1]);
 
             // Organize custom attribute indices
-            if (Version >= 24.1) {
+            if (Version >= MetadataVersions.V241) {
                 AttributeIndicesByToken = [];
                 foreach (var image in Images)
                 {
@@ -269,7 +273,7 @@ namespace Il2CppInspector
                     for (int i = 0; i < image.customAttributeCount; i++)
                     {
                         var index = image.customAttributeStart + i;
-                        var token = Version >= 29 ? AttributeDataRanges[index].token : AttributeTypeRanges[index].token;
+                        var token = Version >= MetadataVersions.V290 ? AttributeDataRanges[index].token : AttributeTypeRanges[index].token;
                         attsByToken.Add(token, index);
                     }
 
@@ -294,13 +298,13 @@ namespace Il2CppInspector
             ulong start = 0;
 
             // Global method pointer array
-            if (Version <= 24.1) {
+            if (Version <= MetadataVersions.V241) {
                 start = Binary.GlobalMethodPointers[methodDef.methodIndex];
             }
 
             // Per-module method pointer array uses the bottom 24 bits of the method's metadata token
             // Derived from il2cpp::vm::MetadataCache::GetMethodPointer
-            if (Version >= 24.2) {
+            if (Version >= MetadataVersions.V242) {
                 var method = (methodDef.token & 0xffffff);
                 if (method == 0)
                     return null;
@@ -335,7 +339,7 @@ namespace Il2CppInspector
 
         // Get a method invoker index from a method definition
         public int GetInvokerIndex(Il2CppCodeGenModule module, Il2CppMethodDefinition methodDef) {
-            if (Version <= 24.1) {
+            if (Version <= MetadataVersions.V241) {
                 return methodDef.invokerIndex;
             }
 

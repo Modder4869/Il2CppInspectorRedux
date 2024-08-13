@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Il2CppInspector.Cpp;
+using Il2CppInspector.Next;
 using Il2CppInspector.Reflection;
 
 namespace Il2CppInspector.Model
@@ -123,7 +124,7 @@ namespace Il2CppInspector.Model
             Add(binary.CodeRegistrationPointer, binary.CodeRegistration);
             Add(binary.MetadataRegistrationPointer, binary.MetadataRegistration);
 
-            if (Model.Package.Version >= 24.2) {
+            if (Model.Package.Version >= MetadataVersions.V242) {
                 // TODO: Add some kind of AppArray composite type for arrays as we'll be adding more later
                 Add(binary.CodeRegistration.pcodeGenModules, binary.CodeGenModulePointers);
 

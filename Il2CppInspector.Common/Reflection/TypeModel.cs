@@ -5,6 +5,7 @@
     All rights reserved.
 */
 
+using Il2CppInspector.Next;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -214,7 +215,7 @@ namespace Il2CppInspector.Reflection
 
                     // Get generic type definition
                     TypeInfo genericTypeDef;
-                    if (Package.Version < 27) {
+                    if (Package.Version < MetadataVersions.V270) {
                         // It appears that TypeRef can be -1 if the generic depth recursion limit
                         // (--maximum-recursive-generic-depth=) is reached in Il2Cpp. In this case,
                         // no generic instance type is generated, so we just produce a null TypeInfo here.
@@ -318,7 +319,7 @@ namespace Il2CppInspector.Reflection
         // The attribute index is an index into AttributeTypeRanges, each of which is a start-end range index into AttributeTypeIndices, each of which is a TypeIndex
         public int GetCustomAttributeIndex(Assembly asm, int token, int customAttributeIndex) {
             // Prior to v24.1, Type, Field, Parameter, Method, Event, Property, Assembly definitions had their own customAttributeIndex field
-            if (Package.Version <= 24.0)
+            if (Package.Version <= MetadataVersions.V240)
                 return customAttributeIndex;
 
             // From v24.1 onwards, token was added to Il2CppCustomAttributeTypeRange and each Il2CppImageDefinition noted the CustomAttributeTypeRanges for the image

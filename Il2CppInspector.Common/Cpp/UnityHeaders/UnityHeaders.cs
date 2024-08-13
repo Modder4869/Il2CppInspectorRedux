@@ -11,6 +11,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using Il2CppInspector.Next;
+using VersionedSerialization;
 
 namespace Il2CppInspector.Cpp.UnityHeaders
 {
@@ -19,7 +21,7 @@ namespace Il2CppInspector.Cpp.UnityHeaders
     public class UnityHeaders : IEquatable<UnityHeaders>
     {
         // Metadata version for which this group of headers are valid. Multiple headers may have the same metadata version
-        public double MetadataVersion { get; }
+        public StructVersion MetadataVersion { get; }
 
         // Range of Unity versions for which this group of headers are valid
         public UnityVersionRange VersionRange { get; }
@@ -114,7 +116,7 @@ namespace Il2CppInspector.Cpp.UnityHeaders
 
                 if (metadataVersion != binary.Image.Version)
                     continue;
-                if (metadataVersion == 21) {
+                if (metadataVersion == MetadataVersions.V210) {
                     /* Special version logic for metadata version 21 based on the Il2CppMetadataRegistration.fieldOffsets field */
                     var headerFieldOffsetsArePointers = r.VersionRange.Min.CompareTo("5.3.7") >= 0 && r.VersionRange.Min.CompareTo("5.4.0") != 0;
                     var binaryFieldOffsetsArePointers = binary.FieldOffsets == null;
@@ -194,8 +196,8 @@ namespace Il2CppInspector.Cpp.UnityHeaders
         }
 
         // Get the metadata version from a type header resource name
-        private static double GetMetadataVersionFromFilename(string resourceName)
-            => double.Parse(resourceName.Substring(typeof(UnityHeaders).Namespace.Length + 1).Split('-')[0], NumberFormatInfo.InvariantInfo);
+        private static StructVersion GetMetadataVersionFromFilename(string resourceName)
+            => resourceName[(typeof(UnityHeaders).Namespace!.Length + 1)..].Split('-')[0];
 
         // Equality comparisons
         public static bool operator ==(UnityHeaders first, UnityHeaders second) {

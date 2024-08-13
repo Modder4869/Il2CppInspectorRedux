@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using Il2CppInspector.Next;
 using Il2CppInspector.Reflection;
 
 namespace Il2CppInspector.Outputs
@@ -591,7 +592,7 @@ namespace Il2CppInspector.Outputs
             // Create folder for DLLs
             Directory.CreateDirectory(outputPath);
 
-            if (model.Package.Version >= 29)
+            if (model.Package.Version >= MetadataVersions.V290)
             {
                 // We can now apply all attributes directly.
                 directApplyAttributes = model.TypesByDefinitionIndex

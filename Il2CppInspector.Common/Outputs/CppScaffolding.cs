@@ -248,7 +248,7 @@ namespace Il2CppInspector.Outputs
             using (_writer)
             {
                 writeHeader();
-                writeCode($"#define __IL2CPP_METADATA_VERSION {_model.Package.Version * 10:F0}");
+                writeCode($"#define __IL2CPP_METADATA_VERSION {_model.Package.Version.Major * 10 + _model.Package.Version.Minor * 10:F0}");
             }
 
             // Write boilerplate code
