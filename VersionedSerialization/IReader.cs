@@ -12,11 +12,11 @@ public interface IReader
     string ReadString();
     ReadOnlySpan<byte> ReadBytes(int length);
 
-    T Read<T>() where T : unmanaged;
-    ImmutableArray<T> ReadArray<T>(long count) where T : unmanaged;
+    T ReadPrimitive<T>() where T : unmanaged;
+    ImmutableArray<T> ReadPrimitiveArray<T>(long count) where T : unmanaged;
 
-    T ReadObject<T>(in StructVersion version = default) where T : IReadable, new();
-    ImmutableArray<T> ReadObjectArray<T>(long count, in StructVersion version = default) where T : IReadable, new();
+    T ReadVersionedObject<T>(in StructVersion version = default) where T : IReadable, new();
+    ImmutableArray<T> ReadVersionedObjectArray<T>(long count, in StructVersion version = default) where T : IReadable, new();
 
     public void Align(int alignment = 0);
 }

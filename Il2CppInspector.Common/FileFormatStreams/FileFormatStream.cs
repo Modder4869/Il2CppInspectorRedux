@@ -6,10 +6,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using Il2CppInspector.Next;
 using NoisyCowStudios.Bin2Object;
 using VersionedSerialization;
 
@@ -121,6 +123,27 @@ namespace Il2CppInspector
 
         public void AddPrimitiveMapping(Type objType, Type streamType);
         public void CopyTo(Stream stream);
+
+        public TType ReadMappedPrimitive<TType>(ulong addr) where TType : unmanaged;
+        public TType ReadPrimitive<TType>(long addr) where TType : unmanaged;
+        public TType ReadPrimitive<TType>() where TType : unmanaged;
+
+        public ImmutableArray<TType> ReadMappedPrimitiveArray<TType>(ulong addr, long count) where TType : unmanaged;
+        public ImmutableArray<TType> ReadPrimitiveArray<TType>(long addr, long count) where TType : unmanaged;
+        public ImmutableArray<TType> ReadPrimitiveArray<TType>(long count) where TType : unmanaged;
+
+        public TType ReadMappedVersionedObject<TType>(ulong addr) where TType : IReadable, new();
+        public TType ReadVersionedObject<TType>(long addr) where TType : IReadable, new();
+        public TType ReadVersionedObject<TType>() where TType : IReadable, new();
+
+        public ImmutableArray<TType> ReadMappedVersionedObjectArray<TType>(ulong addr, long count)
+            where TType : IReadable, new();
+
+        public ImmutableArray<TType> ReadVersionedObjectArray<TType>(long addr, long count)
+            where TType : IReadable, new();
+
+        public ImmutableArray<TType> ReadVersionedObjectArray<TType>(long count)
+            where TType : IReadable, new();
     }
 
     public class FileFormatStream
@@ -161,7 +184,7 @@ namespace Il2CppInspector
         }
     }
 
-    public abstract class FileFormatStream<T> : BinaryObjectStream, IFileFormatStream where T : FileFormatStream<T>
+    public abstract class FileFormatStream<T> : BinaryObjectStreamReader, IFileFormatStream where T : FileFormatStream<T>
     {
         public abstract string DefaultFilename { get; }
 
@@ -323,5 +346,15 @@ namespace Il2CppInspector
                 array.Add(ReadMappedObject<U>(pointers[i]));
             return array;
         }
+
+        public TType ReadMappedPrimitive<TType>(ulong addr) where TType : unmanaged => ReadPrimitive<TType>(MapVATR(addr));
+
+        public ImmutableArray<TType> ReadMappedPrimitiveArray<TType>(ulong addr, long count) where TType : unmanaged 
+            => ReadPrimitiveArray<TType>(MapVATR(addr), count);
+
+        public TType ReadMappedVersionedObject<TType>(ulong addr) where TType : IReadable, new() => ReadVersionedObject<TType>(MapVATR(addr));
+
+        public ImmutableArray<TType> ReadMappedVersionedObjectArray<TType>(ulong addr, long count) where TType : IReadable, new()
+            => ReadVersionedObjectArray<TType>(MapVATR(addr), count);
     }
 }

@@ -34,7 +34,7 @@ public partial struct Il2CppAssemblyNameDefinition
 
     [FieldOffset(44)]
     [VersionCondition(LessThan = "15.0")]
-    [CustomSerialization("reader.Read<PublicKeyToken>();", "8")]
+    [CustomSerialization("reader.ReadPrimitive<PublicKeyToken>();", "8")]
     private PublicKeyToken _legacyPublicKeyToken;
 
     [FieldOffset(16)]
@@ -59,6 +59,6 @@ public partial struct Il2CppAssemblyNameDefinition
     public int Revision;
 
     [FieldOffset(44)]
-    [CustomSerialization("reader.Read<PublicKeyToken>();", "8")]
+    [CustomSerialization("reader.ReadPrimitive<PublicKeyToken>();", "8")]
     public PublicKeyToken PublicKeyToken;
 }

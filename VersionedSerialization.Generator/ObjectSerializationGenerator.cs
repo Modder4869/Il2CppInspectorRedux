@@ -213,13 +213,13 @@ namespace VersionedSerialization.Generator
                 string readMethod;
                 if (typeInfo.Type == PropertyType.None)
                 {
-                    readMethod = $"reader.ReadObject<{typeInfo.ComplexTypeName}>(in version);";
+                    readMethod = $"reader.ReadVersionedObject<{typeInfo.ComplexTypeName}>(in version);";
                 }
                 else
                 {
                     readMethod = typeInfo.Type.IsSeperateMethod()
                         ? $"reader.Read{typeInfo.Type.GetTypeName()}();"
-                        : $"reader.Read<{typeInfo.Type.GetTypeName()}>();";
+                        : $"reader.ReadPrimitive<{typeInfo.Type.GetTypeName()}>();";
 
                     if (typeInfo.ComplexTypeName != "")
                         readMethod = $"({typeInfo.ComplexTypeName}){readMethod}";

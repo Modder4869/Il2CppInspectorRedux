@@ -76,7 +76,7 @@ public record struct Il2CppType : IReadable
     public void Read<TReader>(ref TReader reader, in StructVersion version = default) where TReader : IReader, allows ref struct
     {
         Data.Read(ref reader, version);
-        Value = reader.Read<uint>();
+        Value = reader.ReadPrimitive<uint>();
 
         if (MetadataVersions.V272 > version)
         {

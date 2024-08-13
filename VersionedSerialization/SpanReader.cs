@@ -40,7 +40,7 @@ public ref struct SpanReader(ReadOnlySpan<byte> data, int offset = 0, bool littl
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public T Read<T>() where T : unmanaged
+    public T ReadPrimitive<T>() where T : unmanaged
     {
         if (typeof(T) == typeof(byte))
             return Cast<byte, T>(_data[Offset++]);
@@ -84,17 +84,17 @@ public ref struct SpanReader(ReadOnlySpan<byte> data, int offset = 0, bool littl
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ImmutableArray<T> ReadArray<T>(long count) where T : unmanaged
+    public ImmutableArray<T> ReadPrimitiveArray<T>(long count) where T : unmanaged
     {
         var array = ImmutableArray.CreateBuilder<T>(checked((int)count));
         for (long i = 0; i < count; i++)
-            array.Add(Read<T>());
+            array.Add(ReadPrimitive<T>());
 
         return array.MoveToImmutable();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public T ReadObject<T>(in StructVersion version = default) where T : IReadable, new()
+    public T ReadVersionedObject<T>(in StructVersion version = default) where T : IReadable, new()
     {
         var obj = new T();
         obj.Read(ref this, in version);
@@ -102,11 +102,11 @@ public ref struct SpanReader(ReadOnlySpan<byte> data, int offset = 0, bool littl
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ImmutableArray<T> ReadObjectArray<T>(long count, in StructVersion version = default) where T : IReadable, new() 
+    public ImmutableArray<T> ReadVersionedObjectArray<T>(long count, in StructVersion version = default) where T : IReadable, new() 
     {
         var array = ImmutableArray.CreateBuilder<T>(checked((int)count));
         for (long i = 0; i < count; i++)
-            array.Add(ReadObject<T>(in version));
+            array.Add(ReadVersionedObject<T>(in version));
 
         return array.MoveToImmutable();
     }
@@ -126,13 +126,13 @@ public ref struct SpanReader(ReadOnlySpan<byte> data, int offset = 0, bool littl
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool ReadBoolean() => Read<byte>() != 0;
+    public bool ReadBoolean() => ReadPrimitive<byte>() != 0;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ulong ReadNUInt() => _is32Bit ? Read<uint>() : Read<ulong>();
+    public ulong ReadNUInt() => _is32Bit ? ReadPrimitive<uint>() : ReadPrimitive<ulong>();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public long ReadNInt() => _is32Bit ? Read<int>() : Read<long>();
+    public long ReadNInt() => _is32Bit ? ReadPrimitive<int>() : ReadPrimitive<long>();
 
     public void Align(int alignment = 0)
     {

@@ -7,20 +7,20 @@ public static class ReaderExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint ReadCompressedUInt<T>(this ref T reader) where T : struct, IReader, allows ref struct
     {
-        var first = reader.Read<byte>();
+        var first = reader.ReadPrimitive<byte>();
 
         if ((first & 0b10000000) == 0b00000000)
             return first;
 
         if ((first & 0b11000000) == 0b10000000)
-            return (uint)(((first & ~0b10000000) << 8) | reader.Read<byte>());
+            return (uint)(((first & ~0b10000000) << 8) | reader.ReadPrimitive<byte>());
 
         if ((first & 0b11100000) == 0b11000000)
-            return (uint)(((first & ~0b11000000) << 24) | (reader.Read<byte>() << 16) | (reader.Read<byte>() << 8) | reader.Read<byte>());
+            return (uint)(((first & ~0b11000000) << 24) | (reader.ReadPrimitive<byte>() << 16) | (reader.ReadPrimitive<byte>() << 8) | reader.ReadPrimitive<byte>());
 
         return first switch
         {
-            0b11110000 => reader.Read<uint>(),
+            0b11110000 => reader.ReadPrimitive<uint>(),
             0b11111110 => uint.MaxValue - 1,
             0b11111111 => uint.MaxValue,
             _ => throw new InvalidDataException("Invalid compressed uint")
@@ -49,7 +49,7 @@ public static class ReaderExtensions
 
         do
         {
-            current = reader.Read<byte>();
+            current = reader.ReadPrimitive<byte>();
             value |= (current & 0x7FuL) << shift;
             shift += 7;
         } while ((current & 0x80) != 0);

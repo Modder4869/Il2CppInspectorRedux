@@ -25,13 +25,13 @@ public struct Pointer<T>(ulong value = 0) : IReadable, IEquatable<Pointer<T>> wh
     public readonly T Read(ref SpanReader reader, in StructVersion version)
     {
         reader.Offset = (int)PointerValue;
-        return reader.ReadObject<T>(version);
+        return reader.ReadVersionedObject<T>(version);
     }
 
     public readonly ImmutableArray<T> ReadArray(ref SpanReader reader, long count, in StructVersion version)
     {
         reader.Offset = (int)PointerValue;
-        return reader.ReadObjectArray<T>(count, version);
+        return reader.ReadVersionedObjectArray<T>(count, version);
     }
 
     public static implicit operator Pointer<T>(ulong value) => new(value);
