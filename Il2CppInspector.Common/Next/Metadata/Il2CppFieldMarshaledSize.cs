@@ -5,7 +5,7 @@ using FieldIndex = int;
 using TypeIndex = int;
 
 [VersionedStruct]
-public partial struct Il2CppFieldMarshaledSize
+public partial record struct Il2CppFieldMarshaledSize
 {
     public FieldIndex FieldIndex { get; private set; }
     public TypeIndex TypeIndex { get; private set; }

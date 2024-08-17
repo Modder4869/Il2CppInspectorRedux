@@ -4,7 +4,7 @@ using VersionedSerialization.Attributes;
 using GenericParameterIndex = int;
 
 [VersionedStruct]
-public partial struct Il2CppGenericContainer
+public partial record struct Il2CppGenericContainer
 {
     public int OwnerIndex { get; private set; }
     public int TypeArgc { get; private set; }

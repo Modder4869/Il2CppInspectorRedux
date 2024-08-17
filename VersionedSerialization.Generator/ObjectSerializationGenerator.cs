@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using Microsoft.CodeAnalysis;
@@ -20,7 +19,7 @@ namespace VersionedSerialization.Generator
             
             var valueProvider = context.SyntaxProvider
                 .ForAttributeWithMetadataName(Constants.VersionedStructAttribute,
-                    static (node, _) => node is ClassDeclarationSyntax or StructDeclarationSyntax,
+                    static (node, _) => node is ClassDeclarationSyntax or StructDeclarationSyntax or RecordDeclarationSyntax,
                     static (context, _) => (ContextClass: (TypeDeclarationSyntax)context.TargetNode, context.SemanticModel))
                 .Combine(context.CompilationProvider)
                 .Select(static (tuple, cancellationToken) => ParseSerializationInfo(tuple.Left.ContextClass, tuple.Left.SemanticModel, tuple.Right, cancellationToken))
@@ -63,7 +62,16 @@ namespace VersionedSerialization.Generator
                 generator.LeaveScope();
             }
 
-            generator.EnterScope($"public partial {(info.IsStruct ? "struct" : "class")} {info.Name} : IReadable");
+            var definitionType = info.DefinitionType switch
+            {
+                SyntaxKind.ClassDeclaration => "class",
+                SyntaxKind.StructDeclaration => "struct",
+                SyntaxKind.RecordDeclaration => "record",
+                SyntaxKind.RecordStructDeclaration => "record struct",
+                _ => throw new IndexOutOfRangeException()
+            };
+
+            generator.EnterScope($"public partial {definitionType} {info.Name} : IReadable");
             GenerateReadMethod(generator, info);
             generator.AppendLine();
             GenerateSizeMethod(generator, info);
@@ -92,12 +100,7 @@ namespace VersionedSerialization.Generator
                         GenerateVersionCondition(property.VersionConditions, generator);
 
                     generator.EnterScope();
-
                     generator.AppendLine($"size += {property.SizeExpression};");
-
-                    if (property.Alignment != 0)
-                        generator.AppendLine($"size += size % {property.Alignment} == 0 ? 0 : {property.Alignment} - (size % {property.Alignment});");
-
                     generator.LeaveScope();
                 }
 
@@ -121,10 +124,6 @@ namespace VersionedSerialization.Generator
 
                 generator.EnterScope();
                 generator.AppendLine($"this.{property.Name} = {property.ReadMethod}");
-
-                if (property.Alignment != 0)
-                    generator.AppendLine($"reader.Align({property.Alignment});");
-
                 generator.LeaveScope();
             }
 
@@ -176,9 +175,10 @@ namespace VersionedSerialization.Generator
         {
             var classSymbol = model.GetDeclaredSymbol(contextClass, cancellationToken) ?? throw new InvalidOperationException();
 
-            var alignedAttribute = compilation.GetTypeByMetadataName(Constants.AlignedAttribute);
+            //var versionedStructAttribute = compilation.GetTypeByMetadataName(Constants.VersionedStructAttribute);
             var versionConditionAttribute = compilation.GetTypeByMetadataName(Constants.VersionConditionAttribute);
             var customSerializationAttribute = compilation.GetTypeByMetadataName(Constants.CustomSerializationAttribute);
+            var nativeIntegerAttribute = compilation.GetTypeByMetadataName(Constants.NativeIntegerAttribute);
 
             var canGenerateSizeMethod = true;
 
@@ -190,7 +190,6 @@ namespace VersionedSerialization.Generator
                     || member is IPropertySymbol { SetMethod: null })
                     continue;
 
-                var alignment = 0;
                 var versionConditions = new List<VersionCondition>();
 
                 ITypeSymbol type;
@@ -207,41 +206,12 @@ namespace VersionedSerialization.Generator
                 }
 
                 var typeInfo = ParseType(type);
-
-                canGenerateSizeMethod &= typeInfo.Type != PropertyType.String;
-
-                string readMethod;
-                if (typeInfo.Type == PropertyType.None)
-                {
-                    readMethod = $"reader.ReadVersionedObject<{typeInfo.ComplexTypeName}>(in version);";
-                }
-                else
-                {
-                    readMethod = typeInfo.Type.IsSeperateMethod()
-                        ? $"reader.Read{typeInfo.Type.GetTypeName()}();"
-                        : $"reader.ReadPrimitive<{typeInfo.Type.GetTypeName()}>();";
-
-                    if (typeInfo.ComplexTypeName != "")
-                        readMethod = $"({typeInfo.ComplexTypeName}){readMethod}";
-                }
-
-                string sizeExpression;
-                if (typeInfo.Type == PropertyType.None)
-                {
-                    sizeExpression = $"{typeInfo.ComplexTypeName}.Size(in version, is32Bit)";
-                }
-                else
-                {
-                    sizeExpression = $"sizeof({typeInfo.Type.GetTypeName()})";
-                }
+                string? readMethod = null;
+                string? sizeExpression = null;
 
                 foreach (var attribute in member.GetAttributes())
                 {
-                    if (SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, alignedAttribute))
-                    {
-                        alignment = (int)attribute.ConstructorArguments[0].Value!;
-                    } 
-                    else if (SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, versionConditionAttribute))
+                    if (SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, versionConditionAttribute))
                     {
                         StructVersion? lessThan = null,
                             moreThan = null,
@@ -278,16 +248,54 @@ namespace VersionedSerialization.Generator
                     }
                     else if (SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, customSerializationAttribute))
                     {
+                        typeInfo = (PropertyType.Custom, "", typeInfo.IsArray);
                         readMethod = (string)attribute.ConstructorArguments[0].Value!;
                         sizeExpression = (string)attribute.ConstructorArguments[1].Value!;
                     }
+                    else if (SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, nativeIntegerAttribute))
+                    {
+                        typeInfo = (typeInfo.Type.IsUnsignedType()
+                            ? PropertyType.UNativeInteger
+                            : PropertyType.NativeInteger,
+                            typeInfo.ComplexTypeName == "" 
+                                ? typeInfo.Type.GetTypeName() 
+                                : typeInfo.ComplexTypeName, 
+                            typeInfo.IsArray);
+                    }
                 }
+
+                canGenerateSizeMethod &= typeInfo.Type != PropertyType.String;
+
+                if (readMethod == null)
+                {
+                    if (typeInfo.Type == PropertyType.None)
+                    {
+                        readMethod = $"reader.ReadVersionedObject<{typeInfo.ComplexTypeName}>(in version);";
+                    }
+                    else
+                    {
+                        readMethod = typeInfo.Type.IsSeperateMethod()
+                            ? $"reader.Read{typeInfo.Type.GetTypeName()}();"
+                            : $"reader.ReadPrimitive<{typeInfo.Type.GetTypeName()}>();";
+
+                        if (typeInfo.ComplexTypeName != "")
+                            readMethod = $"({typeInfo.ComplexTypeName}){readMethod}";
+                    }
+                }
+
+                sizeExpression ??= typeInfo.Type switch
+                {
+                    PropertyType.None => $"{typeInfo.ComplexTypeName}.Size(in version, is32Bit)",
+                    PropertyType.NativeInteger or PropertyType.UNativeInteger =>
+                        "is32Bit ? sizeof(uint) : sizeof(ulong)",
+                    _ => $"sizeof({typeInfo.Type.GetTypeName()})"
+                };
 
                 properties.Add(new PropertySerializationInfo(
                     member.Name,
                     readMethod,
                     sizeExpression,
-                    alignment,
+                    typeInfo.Type,
                     versionConditions.ToImmutableEquatableArray()
                 ));
             }
@@ -307,8 +315,7 @@ namespace VersionedSerialization.Generator
                 classSymbol.ContainingNamespace.ToDisplayString(),
                 classSymbol.Name,
                 hasBaseType,
-                contextClass.Kind() == SyntaxKind.StructDeclaration,
-                true,
+                contextClass.Kind(),
                 canGenerateSizeMethod,
                 properties.ToImmutableEquatableArray()
             );

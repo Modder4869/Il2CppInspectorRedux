@@ -143,4 +143,9 @@ public ref struct SpanReader(ReadOnlySpan<byte> data, int offset = 0, bool littl
         if (rem != 0)
             Offset += alignment - rem;
     }
+
+    public void Skip(int count)
+    {
+        Offset += count;
+    }
 }

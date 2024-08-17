@@ -5,7 +5,7 @@ using StringIndex = int;
 using TypeIndex = int;
 
 [VersionedStruct]
-public partial struct Il2CppWindowsRuntimeTypeNamePair
+public partial record struct Il2CppWindowsRuntimeTypeNamePair
 {
     public StringIndex NameIndex { get; private set; }
     public TypeIndex TypeIndex { get; private set; }

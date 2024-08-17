@@ -8,7 +8,7 @@ using CustomAttributeIndex = int;
 using VersionedSerialization.Attributes;
 
 [VersionedStruct]
-public partial struct Il2CppImageDefinition
+public partial record struct Il2CppImageDefinition
 {
     public StringIndex NameIndex { get; private set; }
     public AssemblyIndex AssemblyIndex { get; private set; }

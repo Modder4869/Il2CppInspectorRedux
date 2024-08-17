@@ -7,51 +7,50 @@ using FieldIndex = int;
 using TypeDefinitionIndex = int;
 
 [VersionedStruct]
-public partial struct Il2CppMetadataRegistration
+public partial record struct Il2CppMetadataRegistration
 {
-    [Aligned(0)]
+    [NativeInteger]
     public int GenericClassesCount;
 
     public Pointer<Pointer<Il2CppGenericClass>> GenericClasses;
 
-    [Aligned(0)]
+    [NativeInteger]
     public int GenericInstsCount;
 
     public Pointer<Pointer<Il2CppGenericInst>> GenericInsts;
 
-    [Aligned(0)]
+    [NativeInteger]
     public int GenericMethodTableCount;
 
     public Pointer<Il2CppGenericMethodFunctionsDefinitions> GenericMethodTable;
 
-    [Aligned(0)]
+    [NativeInteger]
     public int TypesCount;
 
     public Pointer<Pointer<Il2CppType>> Types;
 
-    [Aligned(0)]
+    [NativeInteger]
     public int MethodSpecsCount;
 
     public Pointer<Il2CppMethodSpec> MethodSpecs;
 
+    [NativeInteger]
     [VersionCondition(LessThan = "16.0")]
     public int MethodReferencesCount;
 
     [VersionCondition(LessThan = "16.0")]
-    [CustomSerialization("reader.ReadNUInt();", "is32Bit ? 4 : 8")]
-    public ulong MethodReferences; // uint**
+    public PrimitivePointer<PrimitivePointer<uint>> MethodReferences; // uint**
 
-    [Aligned(0)]
+    [NativeInteger]
     public FieldIndex FieldOffsetsCount;
 
-    [CustomSerialization("reader.ReadNUInt();", "is32Bit ? 4 : 8")]
-    public ulong FieldOffsets; // int**
+    public PrimitivePointer<PrimitivePointer<int>> FieldOffsets; // int**
 
-    [Aligned(0)]
+    [NativeInteger]
     public TypeDefinitionIndex TypeDefinitionsSizesCount;
     public Pointer<Pointer<Il2CppTypeDefinitionSizes>> TypeDefinitionsSizes;
 
-    [Aligned(0)]
+    [NativeInteger]
     [VersionCondition(GreaterThan = "19.0")]
     public ulong MetadataUsagesCount;
 

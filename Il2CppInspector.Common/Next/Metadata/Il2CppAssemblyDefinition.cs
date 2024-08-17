@@ -7,7 +7,7 @@ using ImageIndex = int;
 
 [VersionedStruct]
 [StructLayout(LayoutKind.Explicit)]
-public partial struct Il2CppAssemblyDefinition
+public partial record struct Il2CppAssemblyDefinition
 {
     [FieldOffset(20)]
     [VersionCondition(LessThan = "15.0")]

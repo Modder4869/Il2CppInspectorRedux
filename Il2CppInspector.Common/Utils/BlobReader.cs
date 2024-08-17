@@ -1,8 +1,6 @@
 ﻿using NoisyCowStudios.Bin2Object;
 using System.Text;
-using System;
 using System.Diagnostics;
-using System.IO;
 using Il2CppInspector.Next;
 using Il2CppInspector.Next.BinaryMetadata;
 using Il2CppInspector.Next.Metadata;
@@ -11,7 +9,7 @@ namespace Il2CppInspector.Utils;
 
 public static class BlobReader
 {
-    public static object GetConstantValueFromBlob(Il2CppInspector inspector, Il2CppTypeEnum type, BinaryObjectStream blob)
+    public static object GetConstantValueFromBlob(Il2CppInspector inspector, Il2CppTypeEnum type, BinaryObjectStreamReader blob)
     {
         const byte kArrayTypeWithDifferentElements = 1;
 
@@ -28,7 +26,7 @@ public static class BlobReader
                 break;
             case Il2CppTypeEnum.IL2CPP_TYPE_CHAR:
                 // UTF-8 character assumed
-                value = BitConverter.ToChar(blob.ReadBytes(2), 0);
+                value = (char)blob.ReadPrimitive<short>();
                 break;
             case Il2CppTypeEnum.IL2CPP_TYPE_U2:
                 value = blob.ReadUInt16();
@@ -162,7 +160,7 @@ public static class BlobReader
         if (typeEnum == Il2CppTypeEnum.IL2CPP_TYPE_ENUM)
         {
             var typeIndex = blob.ReadCompressedInt32();
-            var typeHandle = (uint)inspector.TypeReferences[typeIndex].Data.KlassIndex;
+            var typeHandle = inspector.TypeReferences[typeIndex].Data.KlassIndex;
             enumType = inspector.TypeDefinitions[typeHandle];
 
             var elementTypeHandle = inspector.TypeReferences[enumType.ElementTypeIndex].Data.KlassIndex;

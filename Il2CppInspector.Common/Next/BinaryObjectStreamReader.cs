@@ -8,6 +8,18 @@ namespace Il2CppInspector.Next;
 
 public class BinaryObjectStreamReader : BinaryObjectStream, IReader
 {
+    public new StructVersion Version
+    {
+        get => _version;
+        set
+        {
+            _version = value;
+            base.Version = _version.AsDouble;
+        }
+    }
+
+    private StructVersion _version;
+
     public virtual int Bits { get; set; }
     public bool Is32Bit => Bits == 32;
 
@@ -126,5 +138,10 @@ public class BinaryObjectStreamReader : BinaryObjectStream, IReader
     {
         Position = addr;
         return ReadVersionedObjectArray<TType>(count, Version);
+    }
+
+    public void Skip(int count)
+    {
+        Position += count;
     }
 }

@@ -5,7 +5,7 @@ using StringIndex = int;
 using TypeIndex = int;
 
 [VersionedStruct]
-public partial struct Il2CppFieldDefinition
+public partial record struct Il2CppFieldDefinition
 {
     public StringIndex NameIndex { get; private set; }
     public TypeIndex TypeIndex { get; private set; }

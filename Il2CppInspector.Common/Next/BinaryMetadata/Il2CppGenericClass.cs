@@ -3,9 +3,10 @@
 namespace Il2CppInspector.Next.BinaryMetadata;
 
 [VersionedStruct]
-public partial struct Il2CppGenericClass
+public partial record struct Il2CppGenericClass
 {
-    [VersionCondition(LessThan = "24.5"), Aligned(0)]
+    [NativeInteger]
+    [VersionCondition(LessThan = "24.5")]
     public int TypeDefinitionIndex;
 
     [VersionCondition(GreaterThan = "27.0")]
@@ -13,6 +14,5 @@ public partial struct Il2CppGenericClass
 
     public Il2CppGenericContext Context;
 
-    [CustomSerialization("reader.ReadNUInt();", "is32Bit ? 4 : 8")]
-    public ulong CachedClass; // Il2CppClass*, optional
+    public PrimitivePointer<byte> CachedClass; // Il2CppClass*, optional
 }

@@ -3,14 +3,13 @@
 namespace Il2CppInspector.Next.BinaryMetadata;
 
 [VersionedStruct]
-public partial struct Il2CppRgctxDefinition
+public partial record struct Il2CppRgctxDefinition
 {
-    [Aligned(0)]
+    [NativeInteger]
     public Il2CppRgctxDataType Type;
 
-    [CustomSerialization("reader.ReadNUInt();", "is32Bit ? 4 : 8")]
-    public ulong Data; // void*
+    public PrimitivePointer<byte> Data; // void*
 
-    public readonly Pointer<Il2CppRgctxDefinitionData> Definition => Data;
-    public readonly Pointer<Il2CppRgctxConstrainedData> Constrained => Data;
+    public readonly Pointer<Il2CppRgctxDefinitionData> Definition => Data.PointerValue;
+    public readonly Pointer<Il2CppRgctxConstrainedData> Constrained => Data.PointerValue;
 }

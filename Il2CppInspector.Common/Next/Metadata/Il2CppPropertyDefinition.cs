@@ -7,7 +7,7 @@ using StringIndex = int;
 using MethodIndex = int;
 
 [VersionedStruct]
-public partial struct Il2CppPropertyDefinition
+public partial record struct Il2CppPropertyDefinition
 {
     public StringIndex NameIndex { get; private set; }
     public MethodIndex Get { get; private set; }

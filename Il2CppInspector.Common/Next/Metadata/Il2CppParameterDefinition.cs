@@ -5,7 +5,7 @@ using StringIndex = int;
 using TypeIndex = int;
 
 [VersionedStruct]
-public partial struct Il2CppParameterDefinition
+public partial record struct Il2CppParameterDefinition
 {
     public StringIndex NameIndex { get; private set; }
     public uint Token { get; private set; }

@@ -21,7 +21,7 @@ namespace Il2CppInspector
         FieldRva = 7
     }
 
-    public class MetadataUsage
+    public record struct MetadataUsage
     {
         public MetadataUsageType Type { get; }
         public int SourceIndex { get; }
@@ -39,7 +39,7 @@ namespace Il2CppInspector
             if (package.Version < MetadataVersions.V190) {
                 /* These encoded indices appear only in vtables, and are decoded by IsGenericMethodIndex/GetDecodedMethodIndex */
                 var isGeneric = encodedIndex & 0x80000000;
-                index = package.Binary.VTableMethodReferences[encodedIndex & 0x7FFFFFFF];
+                index = package.Binary.VTableMethodReferences[(int)(encodedIndex & 0x7FFFFFFF)];
                 usageType = (isGeneric != 0) ? MetadataUsageType.MethodRef : MetadataUsageType.MethodDef;
             } else {
                 /* These encoded indices appear in metadata usages, and are decoded by GetEncodedIndexType/GetDecodedMethodIndex */

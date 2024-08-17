@@ -8,7 +8,7 @@ using StringIndex = int;
 using GenericParameterConstraintIndex = short;
 
 [VersionedStruct]
-public partial struct Il2CppGenericParameter
+public partial record struct Il2CppGenericParameter
 {
     public GenericContainerIndex OwnerIndex { get; private set; }
     public StringIndex NameIndex { get; private set; }

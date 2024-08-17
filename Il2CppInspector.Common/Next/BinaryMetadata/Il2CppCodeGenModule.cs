@@ -3,17 +3,16 @@
 namespace Il2CppInspector.Next.BinaryMetadata;
 
 [VersionedStruct]
-public partial struct Il2CppCodeGenModule
+public partial record struct Il2CppCodeGenModule
 {
-    [CustomSerialization("reader.ReadNUInt();", "is32Bit ? 4 : 8")]
-    public ulong ModuleName; // const char*
+    public PrimitivePointer<byte> ModuleName; // const char*
 
-    [Aligned(0)]
+    [NativeInteger]
     public uint MethodPointerCount;
     
     public Pointer<Il2CppMethodPointer> MethodPointers;
 
-    [Aligned(0)]
+    [NativeInteger]
     [VersionCondition(EqualTo = "24.5")]
     [VersionCondition(GreaterThan = "27.1")]
     public uint AdjustorThunksCount;
@@ -22,24 +21,22 @@ public partial struct Il2CppCodeGenModule
     [VersionCondition(GreaterThan = "27.1")]
     public Pointer<Il2CppTokenAdjustorThunkPair> AdjustorThunks;
 
-    [CustomSerialization("reader.ReadNUInt();", "is32Bit ? 4 : 8")]
-    public ulong InvokerIndices; // int*
+    public PrimitivePointer<int> InvokerIndices; // int*
 
-    [Aligned(0)]
+    [NativeInteger]
     public uint ReversePInvokeWrapperCount;
 
     public Pointer<Il2CppTokenIndexMethodTuple> ReversePInvokeWrapperIndices;
 
-    [Aligned(0)]
+    [NativeInteger]
     public uint RgctxRangesCount;
     public Pointer<Il2CppTokenRangePair> RgctxRanges;
 
-    [Aligned(0)]
+    [NativeInteger]
     public uint RgctxsCount;
     public Pointer<Il2CppRgctxDefinition> Rgctxs;
 
-    [CustomSerialization("reader.ReadNUInt();", "is32Bit ? 4 : 8")]
-    public ulong DebuggerMetadata; // Pointer<Il2CppDebuggerMetadataRegistration> DebuggerMetadata;
+    public PrimitivePointer<byte> DebuggerMetadata; // Pointer<Il2CppDebuggerMetadataRegistration> DebuggerMetadata;
 
     [VersionCondition(GreaterThan = "27.0", LessThan = "27.2")]
     public Pointer<Il2CppMethodPointer> CustomAttributeCacheGenerator;
@@ -48,14 +45,11 @@ public partial struct Il2CppCodeGenModule
     public Il2CppMethodPointer ModuleInitializer;
 
     [VersionCondition(GreaterThan = "27.0")]
-    [Aligned(0)]
-    public ulong StaticConstructorTypeIndices; // TypeDefinitionIndex*
+    public PrimitivePointer<int> StaticConstructorTypeIndices; // TypeDefinitionIndex*
 
     [VersionCondition(GreaterThan = "27.0")]
-    [CustomSerialization("reader.ReadNUInt();", "is32Bit ? 4 : 8")]
-    public ulong MetadataRegistration; // Pointer<Il2CppMetadataRegistration>
+    public PrimitivePointer<byte> MetadataRegistration; // Pointer<Il2CppMetadataRegistration>
 
     [VersionCondition(GreaterThan = "27.0")]
-    [CustomSerialization("reader.ReadNUInt();", "is32Bit ? 4 : 8")]
-    public ulong CodeRegistration; // Pointer<Il2CppCodeRegistration>
+    public PrimitivePointer<byte> CodeRegistration; // Pointer<Il2CppCodeRegistration>
 }

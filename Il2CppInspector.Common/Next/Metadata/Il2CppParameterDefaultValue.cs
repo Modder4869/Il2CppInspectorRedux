@@ -6,7 +6,7 @@ using DefaultValueDataIndex = int;
 using VersionedSerialization.Attributes;
 
 [VersionedStruct]
-public partial struct Il2CppParameterDefaultValue
+public partial record struct Il2CppParameterDefaultValue
 {
     public ParameterIndex ParameterIndex { get; private set; }
     public TypeIndex TypeIndex { get; private set; }

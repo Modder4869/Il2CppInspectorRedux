@@ -7,7 +7,7 @@ using TypeIndex = int;
 using DefaultValueDataIndex = int;
 
 [VersionedStruct]
-public partial struct Il2CppFieldDefaultValue
+public partial record struct Il2CppFieldDefaultValue
 {
     public FieldIndex FieldIndex { get; private set; }
     public TypeIndex TypeIndex { get; private set; }

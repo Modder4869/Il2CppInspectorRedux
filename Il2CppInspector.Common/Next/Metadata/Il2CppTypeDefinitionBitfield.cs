@@ -3,7 +3,7 @@
 namespace Il2CppInspector.Next.Metadata;
 
 [VersionedStruct]
-public partial struct Il2CppTypeDefinitionBitfield
+public partial record struct Il2CppTypeDefinitionBitfield
 {
     private uint _value;
 

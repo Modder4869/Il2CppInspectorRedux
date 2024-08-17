@@ -18,5 +18,6 @@ public interface IReader
     T ReadVersionedObject<T>(in StructVersion version = default) where T : IReadable, new();
     ImmutableArray<T> ReadVersionedObjectArray<T>(long count, in StructVersion version = default) where T : IReadable, new();
 
-    public void Align(int alignment = 0);
+    void Align(int alignment = 0);
+    void Skip(int count);
 }

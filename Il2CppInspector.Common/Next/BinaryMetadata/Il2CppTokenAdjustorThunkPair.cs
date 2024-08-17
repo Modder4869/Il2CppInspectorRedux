@@ -3,9 +3,9 @@
 namespace Il2CppInspector.Next.BinaryMetadata;
 
 [VersionedStruct]
-public partial struct Il2CppTokenAdjustorThunkPair
+public partial record struct Il2CppTokenAdjustorThunkPair
 {
-    [Aligned(0)]
+    [NativeInteger]
     public uint Token;
 
     public Il2CppMethodPointer AdjustorThunk;

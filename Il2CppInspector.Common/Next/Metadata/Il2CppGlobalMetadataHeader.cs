@@ -25,7 +25,7 @@ namespace Il2CppInspector.Next.Metadata;
 // Metadata version is written at the end of Unity.IL2CPP.MetadataCacheWriter.WriteLibIl2CppMetadata or WriteMetadata (Unity.IL2CPP.dll)
 
 [VersionedStruct]
-public partial struct Il2CppGlobalMetadataHeader
+public partial record struct Il2CppGlobalMetadataHeader
 {
     public int Sanity { get; private set; }
     public int Version { get; private set; }

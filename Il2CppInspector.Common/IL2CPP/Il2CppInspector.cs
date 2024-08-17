@@ -9,6 +9,7 @@ using Il2CppInspector.Utils;
 using NoisyCowStudios.Bin2Object;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -41,38 +42,38 @@ namespace Il2CppInspector
 
         public Dictionary<int, string> Strings => Metadata.Strings;
         public string[] StringLiterals => Metadata.StringLiterals;
-        public Il2CppTypeDefinition[] TypeDefinitions => Metadata.Types;
-        public Il2CppAssemblyDefinition[] Assemblies => Metadata.Assemblies;
-        public Il2CppImageDefinition[] Images => Metadata.Images;
-        public Il2CppMethodDefinition[] Methods => Metadata.Methods;
-        public Il2CppParameterDefinition[] Params => Metadata.Params;
-        public Il2CppFieldDefinition[] Fields => Metadata.Fields;
-        public Il2CppPropertyDefinition[] Properties => Metadata.Properties;
-        public Il2CppEventDefinition[] Events => Metadata.Events;
-        public Il2CppGenericContainer[] GenericContainers => Metadata.GenericContainers;
-        public Il2CppGenericParameter[] GenericParameters => Metadata.GenericParameters;
-        public int[] GenericConstraintIndices => Metadata.GenericConstraintIndices;
-        public Il2CppCustomAttributeTypeRange[] AttributeTypeRanges => Metadata.AttributeTypeRanges;
-        public Il2CppCustomAttributeDataRange[] AttributeDataRanges => Metadata.AttributeDataRanges;
-        public Il2CppInterfaceOffsetPair[] InterfaceOffsets => Metadata.InterfaceOffsets;
-        public int[] InterfaceUsageIndices => Metadata.InterfaceUsageIndices;
-        public int[] NestedTypeIndices => Metadata.NestedTypeIndices;
-        public int[] AttributeTypeIndices => Metadata.AttributeTypeIndices;
-        public uint[] VTableMethodIndices => Metadata.VTableMethodIndices;
-        public Il2CppFieldRef[] FieldRefs => Metadata.FieldRefs;
+        public ImmutableArray<Il2CppTypeDefinition> TypeDefinitions => Metadata.Types;
+        public ImmutableArray<Il2CppAssemblyDefinition> Assemblies => Metadata.Assemblies;
+        public ImmutableArray<Il2CppImageDefinition> Images => Metadata.Images;
+        public ImmutableArray<Il2CppMethodDefinition> Methods => Metadata.Methods;
+        public ImmutableArray<Il2CppParameterDefinition> Params => Metadata.Params;
+        public ImmutableArray<Il2CppFieldDefinition> Fields => Metadata.Fields;
+        public ImmutableArray<Il2CppPropertyDefinition> Properties => Metadata.Properties;
+        public ImmutableArray<Il2CppEventDefinition> Events => Metadata.Events;
+        public ImmutableArray<Il2CppGenericContainer> GenericContainers => Metadata.GenericContainers;
+        public ImmutableArray<Il2CppGenericParameter> GenericParameters => Metadata.GenericParameters;
+        public ImmutableArray<int> GenericConstraintIndices => Metadata.GenericConstraintIndices;
+        public ImmutableArray<Il2CppCustomAttributeTypeRange> AttributeTypeRanges => Metadata.AttributeTypeRanges;
+        public ImmutableArray<Il2CppCustomAttributeDataRange> AttributeDataRanges => Metadata.AttributeDataRanges;
+        public ImmutableArray<Il2CppInterfaceOffsetPair> InterfaceOffsets => Metadata.InterfaceOffsets;
+        public ImmutableArray<int> InterfaceUsageIndices => Metadata.InterfaceUsageIndices;
+        public ImmutableArray<int> NestedTypeIndices => Metadata.NestedTypeIndices;
+        public ImmutableArray<int> AttributeTypeIndices => Metadata.AttributeTypeIndices;
+        public ImmutableArray<uint> VTableMethodIndices => Metadata.VTableMethodIndices;
+        public ImmutableArray<Il2CppFieldRef> FieldRefs => Metadata.FieldRefs;
         public Dictionary<int, (ulong, object)> FieldDefaultValue { get; } = new Dictionary<int, (ulong, object)>();
         public Dictionary<int, (ulong, object)> ParameterDefaultValue { get; } = new Dictionary<int, (ulong, object)>();
         public List<long> FieldOffsets { get; }
-        public List<Il2CppType> TypeReferences => Binary.TypeReferences;
+        public ImmutableArray<Il2CppType> TypeReferences => Binary.TypeReferences;
         public Dictionary<ulong, int> TypeReferenceIndicesByAddress => Binary.TypeReferenceIndicesByAddress;
-        public List<Il2CppGenericInst> GenericInstances => Binary.GenericInstances;
+        public ImmutableArray<Il2CppGenericInst> GenericInstances => Binary.GenericInstances;
         public Dictionary<string, Il2CppCodeGenModule> Modules => Binary.Modules;
         public ulong[] CustomAttributeGenerators { get; }
         public ulong[] MethodInvokePointers { get; }
-        public Il2CppMethodSpec[] MethodSpecs => Binary.MethodSpecs;
+        public ImmutableArray<Il2CppMethodSpec> MethodSpecs => Binary.MethodSpecs;
         public Dictionary<Il2CppMethodSpec, ulong> GenericMethodPointers { get; }
         public Dictionary<Il2CppMethodSpec, int> GenericMethodInvokerIndices => Binary.GenericMethodInvokerIndices;
-        public List<Il2CppTypeDefinitionSizes> TypeDefinitionSizes => Binary.TypeDefinitionSizes;
+        public ImmutableArray<Il2CppTypeDefinitionSizes> TypeDefinitionSizes => Binary.TypeDefinitionSizes;
 
         // TODO: Finish all file access in the constructor and eliminate the need for this
         public IFileFormatStream BinaryImage => Binary.Image;
@@ -121,7 +122,7 @@ namespace Il2CppInspector
             // Unfortunately the value supplied in MetadataRegistration.matadataUsagesCount seems to be incorrect,
             // so we have to calculate the correct number of usages above before reading the usage address list from the binary
             var count = usages.Keys.Max() + 1;
-            var addresses = Binary.Image.ReadMappedArray<ulong>(Binary.MetadataRegistration.MetadataUsages, (int) count);
+            var addresses = Binary.Image.ReadMappedUWordArray(Binary.MetadataRegistration.MetadataUsages, (int) count);
             foreach (var usage in usages)
                 usage.Value.SetAddress(addresses[usage.Key]);
 
@@ -161,7 +162,7 @@ namespace Il2CppInspector
             {
                 return usage.Type switch
                 {
-                    MetadataUsageType.TypeInfo or MetadataUsageType.Type => TypeReferences.Count > usage.SourceIndex,
+                    MetadataUsageType.TypeInfo or MetadataUsageType.Type => TypeReferences.Length > usage.SourceIndex,
                     MetadataUsageType.MethodDef => Methods.Length > usage.SourceIndex,
                     MetadataUsageType.FieldInfo or MetadataUsageType.FieldRva => FieldRefs.Length > usage.SourceIndex,
                     MetadataUsageType.StringLiteral => StringLiterals.Length > usage.SourceIndex,
@@ -347,7 +348,7 @@ namespace Il2CppInspector
 
             // Version >= 24.2
             var methodInModule = (methodDef.Token & 0xffffff);
-            return Binary.MethodInvokerIndices[module][methodInModule - 1];
+            return Binary.MethodInvokerIndices[module][(int)methodInModule - 1];
         }
 
         public MetadataUsage[] GetVTable(Il2CppTypeDefinition definition) {

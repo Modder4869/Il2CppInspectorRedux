@@ -4,7 +4,7 @@ using VersionedSerialization.Attributes;
 
 namespace Il2CppInspector.Next;
 
-public struct Pointer<T>(ulong value = 0) : IReadable, IEquatable<Pointer<T>> where T : struct, IReadable
+public struct PrimitivePointer<T>(ulong value = 0) : IReadable, IEquatable<PrimitivePointer<T>> where T : unmanaged
 {
     [NativeInteger]
     private ulong _value = value;
@@ -22,33 +22,33 @@ public struct Pointer<T>(ulong value = 0) : IReadable, IEquatable<Pointer<T>> wh
         return is32Bit ? 4 : 8;
     }
 
-    public readonly T Read(ref SpanReader reader, in StructVersion version)
+    public readonly T Read(ref SpanReader reader)
     {
         reader.Offset = (int)PointerValue;
-        return reader.ReadVersionedObject<T>(version);
+        return reader.ReadPrimitive<T>();
     }
 
-    public readonly ImmutableArray<T> ReadArray(ref SpanReader reader, long count, in StructVersion version)
+    public readonly ImmutableArray<T> ReadArray(ref SpanReader reader, long count)
     {
         reader.Offset = (int)PointerValue;
-        return reader.ReadVersionedObjectArray<T>(count, version);
+        return reader.ReadPrimitiveArray<T>(count);
     }
 
-    public static implicit operator Pointer<T>(ulong value) => new(value);
-    public static implicit operator ulong(Pointer<T> ptr) => ptr.PointerValue;
+    public static implicit operator PrimitivePointer<T>(ulong value) => new(value);
+    public static implicit operator ulong(PrimitivePointer<T> ptr) => ptr.PointerValue;
 
     #region Equality operators + ToString
 
-    public static bool operator ==(Pointer<T> left, Pointer<T> right)
+    public static bool operator ==(PrimitivePointer<T> left, PrimitivePointer<T> right)
         => left._value == right._value;
 
-    public static bool operator !=(Pointer<T> left, Pointer<T> right)
+    public static bool operator !=(PrimitivePointer<T> left, PrimitivePointer<T> right)
         => !(left == right);
 
     public readonly override bool Equals(object? obj)
-        => obj is Pointer<T> other && Equals(other);
+        => obj is PrimitivePointer<T> other && Equals(other);
 
-    public readonly bool Equals(Pointer<T> other)
+    public readonly bool Equals(PrimitivePointer<T> other)
         => this == other;
 
     public readonly override int GetHashCode()

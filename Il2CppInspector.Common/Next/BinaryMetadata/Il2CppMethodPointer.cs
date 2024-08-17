@@ -3,11 +3,11 @@
 namespace Il2CppInspector.Next.BinaryMetadata;
 
 [VersionedStruct]
-public partial struct Il2CppMethodPointer(ulong addr = 0)
+public partial record struct Il2CppMethodPointer(ulong addr = 0)
 {
     public static readonly Il2CppMethodPointer Null = new();
 
-    [CustomSerialization("reader.ReadNUInt();", "is32Bit ? 4 : 8")]
+    [NativeInteger]
     public ulong Value { get; set; } = addr;
 
     public readonly bool IsNull => Value == 0;

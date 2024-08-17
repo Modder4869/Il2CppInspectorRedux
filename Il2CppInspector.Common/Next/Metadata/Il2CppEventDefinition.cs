@@ -6,7 +6,7 @@ using MethodIndex = int;
 using VersionedSerialization.Attributes;
 
 [VersionedStruct]
-public partial struct Il2CppEventDefinition
+public partial record struct Il2CppEventDefinition
 {
     public StringIndex NameIndex { get; private set; }
     public TypeIndex TypeIndex { get; private set; }

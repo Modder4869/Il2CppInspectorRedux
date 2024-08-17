@@ -5,9 +5,9 @@ public static class Constants
     private const string AttributeNamespace = "VersionedSerialization.Attributes";
 
     public const string VersionedStructAttribute = $"{AttributeNamespace}.{nameof(VersionedStructAttribute)}";
-    public const string AlignedAttribute = $"{AttributeNamespace}.{nameof(AlignedAttribute)}";
     public const string VersionConditionAttribute = $"{AttributeNamespace}.{nameof(VersionConditionAttribute)}";
     public const string CustomSerializationAttribute = $"{AttributeNamespace}.{nameof(CustomSerializationAttribute)}";
+    public const string NativeIntegerAttribute = $"{AttributeNamespace}.{nameof(NativeIntegerAttribute)}";
 
     public const string LessThan = nameof(LessThan);
     public const string GreaterThan = nameof(GreaterThan);

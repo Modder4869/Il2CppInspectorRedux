@@ -10,7 +10,7 @@ using ParameterIndex = int;
 using GenericContainerIndex = int;
 
 [VersionedStruct]
-public partial struct Il2CppMethodDefinition
+public partial record struct Il2CppMethodDefinition
 {
     public StringIndex NameIndex { get; private set; }
 

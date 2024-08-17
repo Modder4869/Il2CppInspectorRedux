@@ -87,7 +87,7 @@ namespace Il2CppInspector.Reflection
         public TypeModel(Il2CppInspector package) {
             Package = package;
             TypesByDefinitionIndex = new TypeInfo[package.TypeDefinitions.Length];
-            TypesByReferenceIndex = new TypeInfo[package.TypeReferences.Count];
+            TypesByReferenceIndex = new TypeInfo[package.TypeReferences.Length];
             GenericParameterTypes = new TypeInfo[package.GenericParameters.Length];
             MethodsByDefinitionIndex = new MethodBase[package.Methods.Length];
             MethodInvokers = new MethodInvoker[package.MethodInvokePointers.Length];
@@ -99,7 +99,7 @@ namespace Il2CppInspector.Reflection
 
             // Create and reference types from TypeRefs
             // Note that you can't resolve any TypeRefs until all the TypeDefs have been processed
-            for (int typeRefIndex = 0; typeRefIndex < package.TypeReferences.Count; typeRefIndex++) {
+            for (int typeRefIndex = 0; typeRefIndex < package.TypeReferences.Length; typeRefIndex++) {
                 if(TypesByReferenceIndex[typeRefIndex] != null) {
                     /* type already generated - probably by forward reference through GetTypeFromVirtualAddress */
                     continue;
@@ -191,7 +191,7 @@ namespace Il2CppInspector.Reflection
         public TypeInfo[] ResolveGenericArguments(Il2CppGenericInst inst) {
 
             // Get list of pointers to type parameters (both unresolved and concrete)
-            var genericTypeArguments = Package.BinaryImage.ReadMappedArray<ulong>(inst.TypeArgv, (int)inst.TypeArgc);
+            var genericTypeArguments = Package.BinaryImage.ReadMappedUWordArray(inst.TypeArgv, (int)inst.TypeArgc);
             
             return genericTypeArguments.Select(a => GetTypeFromVirtualAddress(a)).ToArray();
         }
@@ -212,7 +212,7 @@ namespace Il2CppInspector.Reflection
                 // Constructed types
                 case Il2CppTypeEnum.IL2CPP_TYPE_GENERICINST:
                     // TODO: Replace with array load from Il2CppMetadataRegistration.genericClasses
-                    var generic = image.ReadMappedObject<Il2CppGenericClass>(typeRef.Data.GenericClass); // Il2CppGenericClass *
+                    var generic = image.ReadMappedVersionedObject<Il2CppGenericClass>(typeRef.Data.GenericClass); // Il2CppGenericClass *
 
                     // Get generic type definition
                     TypeInfo genericTypeDef;
@@ -230,13 +230,13 @@ namespace Il2CppInspector.Reflection
 
                     // Get the instantiation
                     // TODO: Replace with array load from Il2CppMetadataRegistration.genericInsts
-                    var genericInstance = image.ReadMappedObject<Il2CppGenericInst>(generic.Context.ClassInst);
+                    var genericInstance = image.ReadMappedVersionedObject<Il2CppGenericInst>(generic.Context.ClassInst);
                     var genericArguments = ResolveGenericArguments(genericInstance);
 
                     underlyingType = genericTypeDef.MakeGenericType(genericArguments);
                     break;
                 case Il2CppTypeEnum.IL2CPP_TYPE_ARRAY:
-                    var descriptor = image.ReadMappedObject<Il2CppArrayType>(typeRef.Data.ArrayType);
+                    var descriptor = image.ReadMappedVersionedObject<Il2CppArrayType>(typeRef.Data.ArrayType);
                     var elementType = GetTypeFromVirtualAddress(descriptor.ElementType);
                     underlyingType = elementType.MakeArrayType(descriptor.Rank);
                     break;

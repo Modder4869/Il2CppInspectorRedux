@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text;
 using Il2CppInspector.Next;
 using Il2CppInspector.Next.BinaryMetadata;
+using VersionedSerialization;
 
 namespace Il2CppInspector
 {
@@ -147,7 +148,7 @@ namespace Il2CppInspector
                                                  potentialCodeGenModules - (ulong) i * ptrSize, 1))
                                     {
                                         var expectedImageCountPtr = potentialCodeRegistrationPtr - ptrSize;
-                                        var expectedImageCount = ptrSize == 4 ? Image.ReadMappedInt32(expectedImageCountPtr) : Image.ReadMappedInt64(expectedImageCountPtr);
+                                        var expectedImageCount = Image.ReadMappedWord(expectedImageCountPtr);
                                         if (expectedImageCount == imagesCount)
                                             return potentialCodeRegistrationPtr;
                                     }
@@ -206,11 +207,12 @@ namespace Il2CppInspector
 
 
                 // pCodeGenModules is the last field in CodeRegistration so we subtract the size of one pointer from the struct size
-                codeRegistration = codeRegVa - ((ulong) metadata.Sizeof(typeof(Il2CppCodeRegistration), Image.Version, Image.Bits / 8) - ptrSize);
+                var codeRegSize = (ulong)Il2CppCodeRegistration.Size(Image.Version, Image.Bits == 32);
+                codeRegistration = codeRegVa - codeRegSize - ptrSize;
 
                 // In v24.3, windowsRuntimeFactoryTable collides with codeGenModules. So far no samples have had windowsRuntimeFactoryCount > 0;
                 // if this changes we'll have to get smarter about disambiguating these two.
-                var cr = Image.ReadMappedObject<Il2CppCodeRegistration>(codeRegistration);
+                var cr = Image.ReadMappedVersionedObject<Il2CppCodeRegistration>(codeRegistration);
 
                 if (Image.Version == MetadataVersions.V242 && cr.InteropDataCount == 0) {
                     Image.Version = MetadataVersions.V243;
@@ -223,6 +225,22 @@ namespace Il2CppInspector
                     // We need to bump version to 27.1 and back up one more pointer.
                     Image.Version = MetadataVersions.V271;
                     codeRegistration -= ptrSize;
+                }
+
+                // genericAdjustorThunks was inserted before invokerPointersCount in 24.5 and 27.1
+                // pointer expected if we need to bump version
+                if (Image.Version == MetadataVersions.V244 && cr.InvokerPointersCount > 0x50000)
+                {
+                    Image.Version = MetadataVersions.V245;
+                    codeRegistration += 1 * ptrSize;
+                    cr = Image.ReadMappedVersionedObject<Il2CppCodeRegistration>(codeRegistration);
+                }
+
+                if ((Image.Version == MetadataVersions.V290 || Image.Version == MetadataVersions.V310) &&
+                    cr.InteropData + cr.InteropDataCount >= (ulong)Image.Length)
+                {
+                    Image.Version = new StructVersion(Image.Version.Major, 1, Image.Version.Tag);
+                    cr = Image.ReadMappedVersionedObject<Il2CppCodeRegistration>(codeRegistration);
                 }
             }
 
@@ -239,7 +257,7 @@ namespace Il2CppInspector
                 // the count of custom attribute generators; the distance between them
                 // depends on the il2cpp version so we just use ReadMappedObject to simplify the math
                 foreach (var va in vas) {
-                    var cr = Image.ReadMappedObject<Il2CppCodeRegistration>(va);
+                    var cr = Image.ReadMappedVersionedObject<Il2CppCodeRegistration>(va);
 
                     if (cr.CustomAttributeCount == metadata.AttributeTypeRanges.Length)
                         codeRegistration = va;
@@ -255,15 +273,16 @@ namespace Il2CppInspector
 
             // Find TypeDefinitionsSizesCount (4th last field) then work back to the start of the struct
             // This saves us from guessing where metadataUsagesCount is later
-            var mrSize = (ulong) metadata.Sizeof(typeof(Il2CppMetadataRegistration), Image.Version, Image.Bits / 8);
+            var mrSize = (ulong)Il2CppMetadataRegistration.Size(Image.Version, Image.Bits == 32);
             var typesLength = (ulong) metadata.Types.Length;
 
             vas = FindAllMappedWords(imageBytes, typesLength).Select(a => a - mrSize + ptrSize * 4);
 
             // >= 19 && < 27
             if (Image.Version < MetadataVersions.V270)
-                foreach (var va in vas) {
-                    var mr = Image.ReadMappedObject<Il2CppMetadataRegistration>(va);
+                foreach (var va in vas)
+                {
+                    var mr = Image.ReadMappedVersionedObject<Il2CppMetadataRegistration>(va);
                     if (mr.MetadataUsagesCount == (ulong) metadata.MetadataUsageLists.Length)
                         metadataRegistration = va;
                 }
@@ -273,22 +292,17 @@ namespace Il2CppInspector
             // Synonyms: copying, piracy, theft, strealing, infringement of copyright
 
             // >= 27
-            else {
-                // We're going to just sanity check all of the fields
-                // All counts should be under a certain threshold
-                // All pointers should be mappable to the binary
-
-                var mrFieldCount = mrSize / (ulong) (Image.Bits / 8);
-                foreach (var va in vas) {
-                    var mrWords = Image.ReadMappedWordArray(va, (int) mrFieldCount);
-
-                    // Even field indices are counts, odd field indices are pointers
-                    bool ok = true;
-                    for (var i = 0; i < mrWords.Length && ok; i++) {
-                        ok = i % 2 == 0 || Image.TryMapVATR((ulong) mrWords[i], out _);
-                    }
-                    if (ok)
+            else
+            {
+                foreach (var va in vas)
+                {
+                    var mr = Image.ReadMappedVersionedObject<Il2CppMetadataRegistration>(va);
+                    if (mr.TypeDefinitionsSizesCount == metadata.Types.Length
+                        && mr.FieldOffsetsCount == metadata.Types.Length)
+                    {
                         metadataRegistration = va;
+                        break;
+                    }
                 }
             }
             if (metadataRegistration == 0)

@@ -2,8 +2,7 @@
 
 namespace Il2CppInspector.Next.BinaryMetadata;
 
-
-public struct Il2CppGuid : IReadable
+public record struct Il2CppGuid : IReadable
 {
     public Guid Value;
 

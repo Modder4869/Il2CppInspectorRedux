@@ -16,6 +16,9 @@ public enum PropertyType
     Int32,
     Int64,
     String,
+    Custom,
+    NativeInteger,
+    UNativeInteger,
 }
 
 public static class PropertyTypeExtensions
@@ -35,6 +38,9 @@ public static class PropertyTypeExtensions
             PropertyType.Int32 => nameof(PropertyType.Int32),
             PropertyType.Int64 => nameof(PropertyType.Int64),
             PropertyType.String => nameof(String),
+            PropertyType.Custom => "",
+            PropertyType.NativeInteger => "NInt",
+            PropertyType.UNativeInteger => "NUInt",
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
         };
 
@@ -43,6 +49,40 @@ public static class PropertyTypeExtensions
         {
             PropertyType.Boolean => true,
             PropertyType.String => true,
+            PropertyType.Custom => true,
+            PropertyType.NativeInteger => true,
+            PropertyType.UNativeInteger => true,
+            _ => false
+        };
+
+    public static int GetTypeSize(this PropertyType type)
+        => type switch
+        {
+            PropertyType.Unsupported => -1,
+            PropertyType.None => 0,
+            PropertyType.UInt8 => 1,
+            PropertyType.Int8 => 1,
+            PropertyType.Boolean => 1,
+            PropertyType.UInt16 => 2,
+            PropertyType.UInt32 => 4,
+            PropertyType.UInt64 => 8,
+            PropertyType.Int16 => 2,
+            PropertyType.Int32 => 4,
+            PropertyType.Int64 => 8,
+            PropertyType.String => -1,
+            PropertyType.Custom => -1,
+            PropertyType.NativeInteger => -1,
+            PropertyType.UNativeInteger => -1,
+            _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+        };
+
+    public static bool IsUnsignedType(this PropertyType type)
+        => type switch
+        {
+            PropertyType.UInt8
+                or PropertyType.UInt16
+                or PropertyType.UInt32
+                or PropertyType.UInt64 => true,
             _ => false
         };
 }

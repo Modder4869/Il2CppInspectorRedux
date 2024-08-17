@@ -17,7 +17,7 @@ public struct PublicKeyToken
 
 [VersionedStruct]
 [StructLayout(LayoutKind.Explicit)]
-public partial struct Il2CppAssemblyNameDefinition
+public partial record struct Il2CppAssemblyNameDefinition
 {
     [FieldOffset(0)]
     public StringIndex NameIndex;

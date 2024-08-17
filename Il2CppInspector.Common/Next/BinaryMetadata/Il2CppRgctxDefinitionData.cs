@@ -6,7 +6,7 @@ using MethodIndex = int;
 using TypeIndex = int;
 
 [VersionedStruct]
-public partial struct Il2CppRgctxDefinitionData
+public partial record struct Il2CppRgctxDefinitionData
 {
     public int Value;
 

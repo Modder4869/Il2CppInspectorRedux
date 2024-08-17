@@ -94,6 +94,9 @@ namespace Il2CppInspector
         long[] ReadMappedWordArray(ulong uiAddr, int count);
         List<U> ReadMappedObjectPointerArray<U>(ulong uiAddr, int count) where U : new();
 
+        ulong ReadMappedUWord(ulong uiAddr);
+        ulong[] ReadMappedUWordArray(ulong uiAddr, int count);
+
         void WriteEndianBytes(byte[] bytes);
         void Write(long int64);
         void Write(ulong uint64);
@@ -143,6 +146,9 @@ namespace Il2CppInspector
             where TType : IReadable, new();
 
         public ImmutableArray<TType> ReadVersionedObjectArray<TType>(long count)
+            where TType : IReadable, new();
+
+        public ImmutableArray<TType> ReadMappedVersionedObjectPointerArray<TType>(ulong addr, int count)
             where TType : IReadable, new();
     }
 
@@ -356,5 +362,32 @@ namespace Il2CppInspector
 
         public ImmutableArray<TType> ReadMappedVersionedObjectArray<TType>(ulong addr, long count) where TType : IReadable, new()
             => ReadVersionedObjectArray<TType>(MapVATR(addr), count);
+
+        public ImmutableArray<TType> ReadMappedVersionedObjectPointerArray<TType>(ulong addr, int count)
+            where TType : IReadable, new()
+        {
+            var pointers = ReadMappedUWordArray(addr, count);
+            var builder = ImmutableArray.CreateBuilder<TType>((int)count);
+            for (long i = 0; i < count; i++)
+                builder.Add(ReadMappedVersionedObject<TType>(pointers[i]));
+
+            return builder.MoveToImmutable();
+        }
+
+        public ulong ReadMappedUWord(ulong uiAddr)
+        {
+            Position = MapVATR(uiAddr);
+            return ReadNUInt();
+        }
+
+        public ulong[] ReadMappedUWordArray(ulong uiAddr, int count)
+        {
+            Position = MapVATR(uiAddr);
+            var arr = new ulong[count];
+            for (int i = 0; i < count; i++)
+                arr[i] = ReadNUInt();
+
+            return arr;
+        }
     }
 }

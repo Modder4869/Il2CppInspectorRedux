@@ -8,7 +8,7 @@ using PInvokeMarshalCleanupFunc = Il2CppMethodPointer;
 using CreateCCWFunc = Il2CppMethodPointer;
 
 [VersionedStruct]
-public partial struct Il2CppInteropData
+public partial record struct Il2CppInteropData
 {
     public Il2CppMethodPointer DelegatePInvokeWrapperFunction;
     public PInvokeMarshalToNativeFunc PInvokeMarshalToNativeFunction;

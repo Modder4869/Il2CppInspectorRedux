@@ -6,7 +6,7 @@ using FieldIndex = int;
 using TypeIndex = int;
 
 [VersionedStruct]
-public partial struct Il2CppFieldRef
+public partial record struct Il2CppFieldRef
 {
     public TypeIndex TypeIndex { get; private set; }
     public FieldIndex FieldIndex { get; private set; }

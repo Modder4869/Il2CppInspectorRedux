@@ -6,6 +6,6 @@ public sealed record PropertySerializationInfo(
     string Name,
     string ReadMethod,
     string SizeExpression,
-    int Alignment,
+    PropertyType Type,
     ImmutableEquatableArray<VersionCondition> VersionConditions
 );

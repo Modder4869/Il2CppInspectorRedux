@@ -7,7 +7,7 @@ using VersionedSerialization.Attributes;
 using EncodedMethodIndex = uint;
 
 [VersionedStruct]
-public partial struct Il2CppMetadataUsage
+public partial record struct Il2CppMetadataUsage
 {
     private const uint TypeMask = 0b111u << 29;
     private const uint InflatedMask = 0b1;

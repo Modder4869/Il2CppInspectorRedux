@@ -15,7 +15,7 @@ using InterfacesIndex = int;
 using VTableIndex = int;
 
 [VersionedStruct]
-public partial struct Il2CppTypeDefinition
+public partial record struct Il2CppTypeDefinition
 {
     public const TypeIndex InvalidTypeIndex = -1;
 

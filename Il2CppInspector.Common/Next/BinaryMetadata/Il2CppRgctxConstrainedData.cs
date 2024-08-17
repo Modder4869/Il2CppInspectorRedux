@@ -6,7 +6,7 @@ namespace Il2CppInspector.Next.BinaryMetadata;
 using TypeIndex = int;
 
 [VersionedStruct]
-public partial struct Il2CppRgctxConstrainedData
+public partial record struct Il2CppRgctxConstrainedData
 {
     public TypeIndex TypeIndex;
     public Il2CppMetadataUsage EncodedMethodIndex;

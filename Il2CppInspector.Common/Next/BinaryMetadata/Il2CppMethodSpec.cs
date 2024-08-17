@@ -6,7 +6,7 @@ using MethodIndex = int;
 using GenericInstIndex = int;
 
 [VersionedStruct]
-public partial struct Il2CppMethodSpec
+public partial record struct Il2CppMethodSpec
 {
     public MethodIndex MethodDefinitionIndex;
     public GenericInstIndex ClassIndexIndex;
