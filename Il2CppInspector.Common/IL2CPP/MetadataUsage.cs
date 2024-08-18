@@ -27,6 +27,8 @@ namespace Il2CppInspector
         public int SourceIndex { get; }
         public ulong VirtualAddress { get; private set; }
 
+        public readonly bool IsValid => Type != 0;
+
         public MetadataUsage(MetadataUsageType type, int sourceIndex, ulong virtualAddress = 0) {
             Type = type;
             SourceIndex = sourceIndex;

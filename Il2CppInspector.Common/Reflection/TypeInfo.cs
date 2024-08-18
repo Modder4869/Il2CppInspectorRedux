@@ -259,7 +259,7 @@ namespace Il2CppInspector.Reflection
                 MetadataUsage[] vt = Assembly.Model.Package.GetVTable(Definition);
                 MethodBase[] res = new MethodBase[vt.Length];
                 for (int i = 0; i < vt.Length; i++) {
-                    if (vt[i] != null)
+                    if (vt[i].IsValid)
                         res[i] = Assembly.Model.GetMetadataUsageMethod(vt[i]);
                 }
                 return res;
