@@ -239,7 +239,7 @@ namespace Il2CppInspector
                 if ((Image.Version == MetadataVersions.V290 || Image.Version == MetadataVersions.V310) &&
                     cr.InteropData + cr.InteropDataCount >= (ulong)Image.Length)
                 {
-                    Image.Version = new StructVersion(Image.Version.Major, 1, Image.Version.Tag);
+                    Image.Version = new StructVersion(Image.Version.Major, 0, MetadataVersions.Tag2022);
                     cr = Image.ReadMappedVersionedObject<Il2CppCodeRegistration>(codeRegistration);
                 }
             }
@@ -249,9 +249,6 @@ namespace Il2CppInspector
             else {
                 // The first item in CodeRegistration is the total number of method pointers
                 vas = FindAllMappedWords(imageBytes, (ulong) metadata.Methods.Count(m => (uint) m.MethodIndex != 0xffff_ffff));
-
-                if (!vas.Any())
-                    return (0, 0);
 
                 // The count of method pointers will be followed some bytes later by
                 // the count of custom attribute generators; the distance between them

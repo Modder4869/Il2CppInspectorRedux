@@ -154,10 +154,14 @@ namespace VersionedSerialization.Generator
                     generator.AppendLine($"&& version == Versions.{GetVersionIdentifier(condition.EqualTo.Value)}");
 
                 if (condition.IncludingTag != null)
-                    generator.AppendLine($"&& version.Tag == \"{condition.IncludingTag}\"");
+                    generator.AppendLine(condition.IncludingTag == ""
+                        ? "&& version.Tag == null"
+                        : $"&& version.Tag == \"{condition.IncludingTag}\"");
 
                 if (condition.ExcludingTag != null)
-                    generator.AppendLine($"&& version.Tag != \"{condition.ExcludingTag}\"");
+                    generator.AppendLine(condition.IncludingTag == ""
+                        ? "&& version.Tag != null"
+                        : $"&& version.Tag != \"{condition.IncludingTag}\"");
 
                 generator.AppendLine(")");
 

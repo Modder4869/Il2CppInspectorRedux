@@ -206,7 +206,7 @@ namespace Il2CppInspector
                     var secondToken = Methods[1].Token;
                     if (secondToken >> 24 != 0x6)
                     {
-                        Version = new StructVersion(Version.Major, 1, Version.Tag);
+                        Version = new StructVersion(Version.Major, 0, MetadataVersions.Tag2023);
 
                         Methods = ReadVersionedObjectArray<Il2CppMethodDefinition>(Header.MethodsOffset,
                             Header.MethodsSize / Sizeof<Il2CppMethodDefinition>());

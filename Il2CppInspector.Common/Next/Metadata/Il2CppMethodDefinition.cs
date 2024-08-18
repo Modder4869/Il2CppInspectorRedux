@@ -19,8 +19,6 @@ public partial record struct Il2CppMethodDefinition
     public TypeIndex ReturnType { get; private set; }
 
     [VersionCondition(EqualTo = "31.0")]
-    [VersionCondition(EqualTo = "31.1")]
-    [VersionCondition(EqualTo = "31.2")]
     public uint ReturnParameterToken { get; private set; }
 
     public ParameterIndex ParameterStart { get; private set; }
@@ -51,8 +49,8 @@ public partial record struct Il2CppMethodDefinition
     public ushort Slot { get; private set; }
     public ushort ParameterCount { get; private set; }
 
-    [VersionCondition(EqualTo = "29.2")]
-    [VersionCondition(EqualTo = "31.2")]
+    [VersionCondition(EqualTo = "29.0", IncludingTag = "2023")]
+    [VersionCondition(EqualTo = "31.0", IncludingTag = "2023")]
     public bool IsUnmanagedCallersOnly { get; private set; }
 
     public readonly MethodAttributes Attributes => (MethodAttributes)Flags;

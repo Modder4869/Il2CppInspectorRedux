@@ -69,23 +69,24 @@ public partial record struct Il2CppCodeRegistration
     public Pointer<Il2CppGuid> Guids;
 
     [NativeInteger]
-    [VersionCondition(GreaterThan = "22.0", LessThan = "29.0")]
+    [VersionCondition(GreaterThan = "22.0", LessThan = "27.2")]
+    [VersionCondition(EqualTo = "29.0", IncludingTag = "")]
     public int UnresolvedVirtualCallCount;
 
     [NativeInteger]
-    [VersionCondition(EqualTo = "29.1"), VersionCondition(EqualTo = "31.1")]
-    [VersionCondition(EqualTo = "29.2"), VersionCondition(EqualTo = "31.2")]
+    [VersionCondition(EqualTo = "29.0", IncludingTag = "2022"), VersionCondition(EqualTo = "31.0", IncludingTag = "2022")]
+    [VersionCondition(EqualTo = "29.0", IncludingTag = "2023"), VersionCondition(EqualTo = "31.0", IncludingTag = "2023")]
     public uint UnresolvedIndirectCallCount; // UnresolvedVirtualCallCount pre 29.1
 
     [VersionCondition(GreaterThan = "22.0")]
     public Pointer<Il2CppMethodPointer> UnresolvedVirtualCallPointers;
 
-    [VersionCondition(EqualTo = "29.1"), VersionCondition(EqualTo = "31.1")]
-    [VersionCondition(EqualTo = "29.2"), VersionCondition(EqualTo = "31.2")]
+    [VersionCondition(EqualTo = "29.0", IncludingTag = "2022"), VersionCondition(EqualTo = "31.0", IncludingTag = "2022")]
+    [VersionCondition(EqualTo = "29.0", IncludingTag = "2023"), VersionCondition(EqualTo = "31.0", IncludingTag = "2023")]
     public Pointer<Il2CppMethodPointer> UnresolvedInstanceCallWrappers;
 
-    [VersionCondition(EqualTo = "29.1"), VersionCondition(EqualTo = "31.1")]
-    [VersionCondition(EqualTo = "29.2"), VersionCondition(EqualTo = "31.2")]
+    [VersionCondition(EqualTo = "29.0", IncludingTag = "2022"), VersionCondition(EqualTo = "31.0", IncludingTag = "2022")]
+    [VersionCondition(EqualTo = "29.0", IncludingTag = "2023"), VersionCondition(EqualTo = "31.0", IncludingTag = "2023")]
     public Pointer<Il2CppMethodPointer> UnresolvedStaticCallPointers;
 
     [NativeInteger]
