@@ -206,9 +206,9 @@ namespace Il2CppInspector
                     return (0, 0);
 
 
+                var codeGenEndPtr = codeRegVa + ptrSize;
                 // pCodeGenModules is the last field in CodeRegistration so we subtract the size of one pointer from the struct size
-                var codeRegSize = (ulong)Il2CppCodeRegistration.Size(Image.Version, Image.Bits == 32);
-                codeRegistration = codeRegVa - codeRegSize - ptrSize;
+                codeRegistration = codeGenEndPtr - (ulong)Il2CppCodeRegistration.Size(Image.Version, Image.Bits == 32);
 
                 // In v24.3, windowsRuntimeFactoryTable collides with codeGenModules. So far no samples have had windowsRuntimeFactoryCount > 0;
                 // if this changes we'll have to get smarter about disambiguating these two.
@@ -216,7 +216,7 @@ namespace Il2CppInspector
 
                 if (Image.Version == MetadataVersions.V242 && cr.InteropDataCount == 0) {
                     Image.Version = MetadataVersions.V243;
-                    codeRegistration -= ptrSize * 2; // two extra words for WindowsRuntimeFactory
+                    codeRegistration = codeGenEndPtr - (ulong)Il2CppCodeRegistration.Size(Image.Version, Image.Bits == 32);
                 }
 
                 if (Image.Version == MetadataVersions.V270 && cr.ReversePInvokeWrapperCount > 0x30000)
@@ -224,7 +224,8 @@ namespace Il2CppInspector
                     // If reversePInvokeWrapperCount is a pointer, then it's because we're actually on 27.1 and there's a genericAdjustorThunks pointer interfering.
                     // We need to bump version to 27.1 and back up one more pointer.
                     Image.Version = MetadataVersions.V271;
-                    codeRegistration -= ptrSize;
+                    codeRegistration = codeGenEndPtr - (ulong)Il2CppCodeRegistration.Size(Image.Version, Image.Bits == 32);
+                    cr = Image.ReadMappedVersionedObject<Il2CppCodeRegistration>(codeRegistration);
                 }
 
                 // genericAdjustorThunks was inserted before invokerPointersCount in 24.5 and 27.1
@@ -232,15 +233,16 @@ namespace Il2CppInspector
                 if (Image.Version == MetadataVersions.V244 && cr.InvokerPointersCount > 0x50000)
                 {
                     Image.Version = MetadataVersions.V245;
-                    codeRegistration += 1 * ptrSize;
+                    codeRegistration = codeGenEndPtr - (ulong)Il2CppCodeRegistration.Size(Image.Version, Image.Bits == 32);
                     cr = Image.ReadMappedVersionedObject<Il2CppCodeRegistration>(codeRegistration);
                 }
 
                 if ((Image.Version == MetadataVersions.V290 || Image.Version == MetadataVersions.V310) &&
-                    cr.InteropData + cr.InteropDataCount >= (ulong)Image.Length)
+                    (!Image.TryMapVATR(cr.InvokerPointers + cr.InvokerPointersCount, out _) ||
+                     !Image.TryMapVATR(cr.GenericMethodPointers + cr.GenericMethodPointersCount, out _)))
                 {
                     Image.Version = new StructVersion(Image.Version.Major, 0, MetadataVersions.Tag2022);
-                    cr = Image.ReadMappedVersionedObject<Il2CppCodeRegistration>(codeRegistration);
+                    codeRegistration = codeGenEndPtr - (ulong)Il2CppCodeRegistration.Size(Image.Version, Image.Bits == 32);
                 }
             }
 
