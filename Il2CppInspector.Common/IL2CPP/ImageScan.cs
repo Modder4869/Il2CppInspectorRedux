@@ -238,8 +238,7 @@ namespace Il2CppInspector
                 }
 
                 if ((Image.Version == MetadataVersions.V290 || Image.Version == MetadataVersions.V310) &&
-                    (!Image.TryMapVATR(cr.InvokerPointers + cr.InvokerPointersCount, out _) ||
-                     !Image.TryMapVATR(cr.GenericMethodPointers + cr.GenericMethodPointersCount, out _)))
+                    cr.GenericMethodPointersCount >= cr.GenericMethodPointers)
                 {
                     Image.Version = new StructVersion(Image.Version.Major, 0, MetadataVersions.Tag2022);
                     codeRegistration = codeGenEndPtr - (ulong)Il2CppCodeRegistration.Size(Image.Version, Image.Bits == 32);
