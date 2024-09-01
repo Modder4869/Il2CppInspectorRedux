@@ -195,25 +195,6 @@ namespace Il2CppInspector
                     Header.AttributeDataRangeSize / Sizeof<Il2CppCustomAttributeDataRange>());
             }
 
-            if (Version == MetadataVersions.V290 || Version == MetadataVersions.V310)
-            {
-                // 29.2/31.2 added a new isUnmanagedCallersOnly flag to Il2CppMethodDefinition.
-                // This offsets all subsequent entries by one - we can detect this by checking the
-                // top token byte (which should always be 0x06).
-
-                if (Methods.Length >= 2)
-                {
-                    var secondToken = Methods[1].Token;
-                    if (secondToken >> 24 != 0x6)
-                    {
-                        Version = new StructVersion(Version.Major, 0, MetadataVersions.Tag2023);
-
-                        Methods = ReadVersionedObjectArray<Il2CppMethodDefinition>(Header.MethodsOffset,
-                            Header.MethodsSize / Sizeof<Il2CppMethodDefinition>());
-                    }
-                }
-            }
-
             // Get all metadata strings
             var pluginGetStringsResult = PluginHooks.GetStrings(this);
             if (pluginGetStringsResult.IsDataModified && !pluginGetStringsResult.IsInvalid)

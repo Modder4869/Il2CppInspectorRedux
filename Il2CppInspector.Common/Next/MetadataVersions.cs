@@ -22,10 +22,10 @@ public static class MetadataVersions
     public static readonly StructVersion V271 = new(27, 1);
     public static readonly StructVersion V272 = new(27, 2);
 
-    // These two versions have three variations:
+    // These two versions have two variations:
     public static readonly StructVersion V290 = new(29);
     public static readonly StructVersion V310 = new(31);
+
     // No tag - 29.0/31.0
     public static readonly string Tag2022 = "2022"; // 29.1/31.1
-    public static readonly string Tag2023 = "2023"; // 29.2/31.2
 }
