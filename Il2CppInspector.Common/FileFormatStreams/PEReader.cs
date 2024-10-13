@@ -140,76 +140,10 @@ namespace Il2CppInspector
             return true;
         }
 
-        // Load DLL into memory and save it as a new PE stream
-        private void load() {
-            // Check that the process is running in the same word size as the DLL
-            // One way round this in future would be to spawn a new process of the correct word size
-            if ((Environment.Is64BitProcess && Bits == 32) || (!Environment.Is64BitProcess && Bits == 64))
-                throw new InvalidOperationException($"Cannot unpack a {Bits}-bit DLL from within a {(Environment.Is64BitProcess ? 64 : 32)}-bit process. Use the {Bits}-version of Il2CppInspector to unpack this DLL.");
-
-            // Get file path
-            // This error should never occur with the bundled CLI and GUI; only when used as a library by a 3rd party tool
-            if (LoadOptions == null || !(LoadOptions.BinaryFilePath is string dllPath))
-                throw new InvalidOperationException("To load a packed PE file, you must specify the DLL file path in LoadOptions");
-
-            // Attempt to load DLL and run startup functions
-            // NOTE: This can cause a CSE (AccessViolation) for certain types of protection
-            // so only try to unpack as the final load strategy
-            IntPtr hModule = LoadLibrary(dllPath);
-            if (hModule == IntPtr.Zero) {
-                var lastErrorCode = Marshal.GetLastWin32Error();
-                throw new InvalidOperationException($"Unable to load the DLL for unpacking: error code {lastErrorCode}");
-            }
-
-            // Maximum image size
-            var size = sections.Last().VirtualAddress + sections.Last().VirtualSize;
-
-            // Allocate memory for unpacked image
-            var peBytes = new byte[size];
-
-            // Copy relevant sections from unmanaged memory
-            foreach (var section in sections.Where(s => wantedSectionTypes.Keys.Contains(s.Characteristics)))
-                Marshal.Copy(IntPtr.Add(hModule, (int) section.VirtualAddress), peBytes, (int) section.VirtualAddress, (int) section.VirtualSize);
-            
-            // Decrease reference count for unload
-            FreeLibrary(hModule);
-
-            // Rebase
-            pe.ImageBase = (ulong) hModule.ToInt64();
-
-            // Rewrite sections to match memory layout
-            foreach (var section in sections) {
-                section.PointerToRawData = section.VirtualAddress;
-                section.SizeOfRawData = section.VirtualSize;
-            }
-
-            // Truncate memory stream at start of COFF header
-            var endOfSignature = ReadUInt32(0x3C) + 4; // DOS header + 4-byte PE signature
-            SetLength(endOfSignature);
-
-            // Re-write the stream (the headers are only necessary in case the user wants to save)
-            Position = endOfSignature;
-            WriteObject(coff);
-            if (Bits == 32) WriteObject((PEOptHeader32) pe);
-                       else WriteObject((PEOptHeader64) pe);
-            WriteArray(sections);
-            Write(peBytes, (int) Position, peBytes.Length - (int) Position);
-
-            IsModified = true;
-        }
-
         // Raw file / unpacked file load strategies
         public override IEnumerable<IFileFormatStream> TryNextLoadStrategy() {
             // First load strategy: the regular file
             yield return this;
-
-            // Second load strategy: load the DLL into memory to unpack it
-            if (mightBePacked) {
-                Console.WriteLine("IL2CPP binary appears to be packed - attempting to unpack and retrying");
-                StatusUpdate("Unpacking binary");
-                load();
-                yield return this;
-            }
         }
 
         public override uint[] GetFunctionTable() {
