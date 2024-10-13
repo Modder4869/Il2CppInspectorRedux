@@ -43,3 +43,34 @@ public enum Il2CppTypeEnum : byte
     IL2CPP_TYPE_ENUM = 0x55,
     IL2CPP_TYPE_IL2CPP_TYPE_INDEX = 0xff
 }
+
+public static class Il2CppTypeEnumExtensions
+{
+    public static bool IsTypeDefinitionEnum(this Il2CppTypeEnum value)
+        => value
+            is Il2CppTypeEnum.IL2CPP_TYPE_VOID
+            or Il2CppTypeEnum.IL2CPP_TYPE_BOOLEAN
+            or Il2CppTypeEnum.IL2CPP_TYPE_CHAR
+            or Il2CppTypeEnum.IL2CPP_TYPE_I1
+            or Il2CppTypeEnum.IL2CPP_TYPE_U1
+            or Il2CppTypeEnum.IL2CPP_TYPE_I2
+            or Il2CppTypeEnum.IL2CPP_TYPE_U2
+            or Il2CppTypeEnum.IL2CPP_TYPE_I4
+            or Il2CppTypeEnum.IL2CPP_TYPE_U4
+            or Il2CppTypeEnum.IL2CPP_TYPE_I8
+            or Il2CppTypeEnum.IL2CPP_TYPE_U8
+            or Il2CppTypeEnum.IL2CPP_TYPE_R4
+            or Il2CppTypeEnum.IL2CPP_TYPE_R8
+            or Il2CppTypeEnum.IL2CPP_TYPE_STRING
+            or Il2CppTypeEnum.IL2CPP_TYPE_VALUETYPE
+            or Il2CppTypeEnum.IL2CPP_TYPE_CLASS
+            or Il2CppTypeEnum.IL2CPP_TYPE_I
+            or Il2CppTypeEnum.IL2CPP_TYPE_U
+            or Il2CppTypeEnum.IL2CPP_TYPE_OBJECT
+            or Il2CppTypeEnum.IL2CPP_TYPE_TYPEDBYREF;
+
+    public static bool IsGenericParameterEnum(this Il2CppTypeEnum value)
+        => value
+            is Il2CppTypeEnum.IL2CPP_TYPE_VAR
+            or Il2CppTypeEnum.IL2CPP_TYPE_MVAR;
+}

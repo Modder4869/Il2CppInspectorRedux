@@ -6,15 +6,12 @@
 */
 
 using Il2CppInspector.Next;
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Il2CppInspector.Next.BinaryMetadata;
+using Il2CppInspector.Next.Metadata;
 using VersionedSerialization;
 
 namespace Il2CppInspector
@@ -369,6 +366,48 @@ namespace Il2CppInspector
             TypeReferenceIndicesByAddress = typeRefPointers.Zip(Enumerable.Range(0, typeRefPointers.Length), (a, i) => new { a, i }).ToDictionary(x => x.a, x => x.i);
             
             TypeReferences = Image.ReadMappedVersionedObjectPointerArray<Il2CppType>(MetadataRegistration.Types, (int)MetadataRegistration.TypesCount);
+
+            if (TypeReferences.Any(x => 
+                    x.Type.IsTypeDefinitionEnum() 
+                    && (uint)x.Data.KlassIndex >= (uint)Metadata.Types.Length))
+            {
+                // This is a memory-dumped binary.
+                // We need to fix the remapped type indices from their pointer form back to the indices.
+                var baseDefinitionPtr = ulong.MaxValue;
+                var baseGenericPtr = ulong.MaxValue;
+
+                foreach (var entry in TypeReferences)
+                {
+                    if (entry.Type.IsTypeDefinitionEnum())
+                    {
+                        baseDefinitionPtr = Math.Min(baseDefinitionPtr, entry.Data.Type.PointerValue);
+                    }
+                    else if (entry.Type.IsGenericParameterEnum())
+                    {
+                        baseGenericPtr = Math.Min(baseGenericPtr, entry.Data.GenericParameterHandle.PointerValue);
+                    }
+
+                }
+
+                var definitionSize = (ulong)Il2CppTypeDefinition.Size(Image.Version);
+                var genericParameterSize = (ulong)Il2CppGenericParameter.Size(Image.Version);
+
+                var builder = ImmutableArray.CreateBuilder<Il2CppType>(TypeReferences.Length);
+                for (var i = 0; i < TypeReferences.Length; i++)
+                {
+                    var type = TypeReferences[i];
+                    if (type.Type.IsTypeDefinitionEnum())
+                    {
+                        type.Data.Value = (type.Data.Type.PointerValue - baseDefinitionPtr) / definitionSize;
+                    }
+                    else if (type.Type.IsGenericParameterEnum())
+                    {
+                        type.Data.Value = (type.Data.Type.PointerValue - baseGenericPtr) / genericParameterSize;
+                    }
+                    builder.Add(type);
+                }
+                TypeReferences = builder.MoveToImmutable();
+            }
 
             // Custom attribute constructors (function pointers)
             // This is managed in Il2CppInspector for metadata >= 27
