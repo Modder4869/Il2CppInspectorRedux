@@ -70,7 +70,7 @@ class BinaryNinjaDisassemblerInterface(BaseDisassemblerInterface):
 				[
 					"--target=x86_64-pc-linux",
 					"-x", "c++",
-					"-D_IDACLANG_=1"
+					"-D_BINARYNINJA_=1"
 				]
 			)
 
