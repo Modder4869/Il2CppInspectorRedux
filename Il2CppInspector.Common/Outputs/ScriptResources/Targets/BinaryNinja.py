@@ -14,6 +14,9 @@ from binaryninja import *
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
 
 class BinaryNinjaDisassemblerInterface(BaseDisassemblerInterface):
+	# this is implemented, 
+	# however the write API does not seem to work properly here (possibly a bug), 
+	# so this is disabled for now
 	supports_fake_string_segment: bool = False
 
 	_status: BaseStatusHandler
@@ -23,6 +26,9 @@ class BinaryNinjaDisassemblerInterface(BaseDisassemblerInterface):
 	_components: dict[str, Component]
 	_type_cache: dict[str, Type]
 	_function_type_cache: dict[str, Type]
+
+	_address_size: int
+	_endianness: Literal["little", "big"]
 
 	def __init__(self, status: BaseStatusHandler):
 		self._status = status
@@ -58,6 +64,9 @@ class BinaryNinjaDisassemblerInterface(BaseDisassemblerInterface):
 		self._components = {}
 		self._type_cache = {}
 		self._function_type_cache = {}
+
+		self._address_size = self._view.address_size
+		self._endianness = "little" if self._view.endianness == Endianness.LittleEndian else "big"
 		
 		self._status.update_step("Parsing header")
 
@@ -202,9 +211,21 @@ class BinaryNinjaDisassemblerInterface(BaseDisassemblerInterface):
 			self._function_type_cache[function_sig] = function
 
 	# only required if supports_fake_string_segment == True
-	#def create_fake_segment(self, name: str, size: int) -> int: return 0
-	#def write_string(self, address: int, value: str): pass
-	#def write_address(self, address: int, value: int): pass
+	def create_fake_segment(self, name: str, size: int) -> int: 
+		last_end_addr = self._view.mapped_address_ranges[-1].end
+		if last_end_addr % 0x1000 != 0: 
+			last_end_addr += (0x1000 - (last_end_addr % 0x1000))
+
+		self._view.add_user_segment(last_end_addr, size, 0, 0, SegmentFlag.SegmentContainsData)
+		self._view.add_user_section(name, last_end_addr, size, SectionSemantics.ReadOnlyDataSectionSemantics)
+		return last_end_addr
+	
+	def write_string(self, address: int, value: str):
+		self._view.write(address, value.encode() + b"\x00")
+
+	def write_address(self, address: int, value: int):
+		self._view.write(address, value.to_bytes(self._address_size, self._endianness))
+
 
 class BinaryNinjaStatusHandler(BaseStatusHandler):
 	def __init__(self, thread: BackgroundTaskThread):
