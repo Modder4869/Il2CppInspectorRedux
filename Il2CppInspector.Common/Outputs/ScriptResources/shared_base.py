@@ -259,6 +259,7 @@ class ScriptContext:
 
 		# IL2CPP API functions
 		self._status.update_step('Processing IL2CPP API functions', len(metadata['apis']))
+		self._backend.cache_function_types([x["signature"] for x in metadata['apis']])
 		for d in metadata['apis']:
 			self.define_cpp_function(d)
 
