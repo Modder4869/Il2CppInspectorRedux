@@ -113,7 +113,8 @@ namespace Il2CppInspector
         // Global enable/disable flag for entire plugin system
         // If set to false, all plugins will be unloaded
         // Disable this if you want to create standalone apps using the API but without plugins
-        private static bool _enabled = true;
+        private static bool _enabled = false;
+
         public static bool Enabled {
             get => _enabled;
             set {
@@ -123,7 +124,7 @@ namespace Il2CppInspector
         }
 
         // All of the detected plugins, including invalid/incompatible/non-loaded plugins
-        public ObservableCollection<ManagedPlugin> ManagedPlugins { get; } = new ObservableCollection<ManagedPlugin>();
+        public ObservableCollection<ManagedPlugin> ManagedPlugins { get; } = [];
 
         // All of the plugins that are loaded and available for use
         public static IEnumerable<IPlugin> AvailablePlugins => AsInstance.ManagedPlugins.Where(p => p.Available).Select(p => p.Plugin);
@@ -136,7 +137,7 @@ namespace Il2CppInspector
             => AsInstance.ManagedPlugins.Where(p => p.Available).ToDictionary(p => p.Plugin.Id, p => p);
 
         // The relative path from the executable that we'll search for plugins
-        private static string pluginFolder = Path.GetFullPath(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName) + Path.DirectorySeparatorChar + "plugins");
+        private static string pluginFolder = Path.GetFullPath(Path.GetDirectoryName(Environment.ProcessPath) + Path.DirectorySeparatorChar + "plugins");
 
         // A placeholder plugin to be used when the real plugin cannot be loaded for some reason
         private class InvalidPlugin : IPlugin
