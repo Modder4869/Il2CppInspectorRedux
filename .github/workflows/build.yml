@@ -2,8 +2,7 @@ name: Il2CppInspectorRedux Build
 
 on:
   push:
-    branches: [ master ]
-
+    branches: [master, refactored-versioning]
   workflow_dispatch:
 
 jobs:
@@ -15,32 +14,36 @@ jobs:
         with:
           submodules: true
 
-      - uses: microsoft/setup-msbuild@v1.1
-  
-      - uses: actions/cache@v3
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v3
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
           restore-keys: |
-              ${{ runner.os }}-nuget-
+            ${{ runner.os }}-nuget-
 
       - name: Restore NuGet packages
-        run: nuget restore
-      
+        run: dotnet restore
+
       - name: Build GUI
-        run: msbuild /t:Il2CppInspector_GUI:publish /p:Configuration=Release /p:Platform="Any CPU" /p:TargetFramework=net9.0-windows /p:SelfContained=false /verbosity:minimal
+        run: dotnet publish ./Il2CppInspector.GUI/Il2CppInspector.GUI.csproj --configuration Release --framework net9.0-windows --self-contained false
 
       - name: Build CLI
-        run: msbuild /t:Il2CppInspector_CLI:publish /p:Configuration=Release /p:Platform="Any CPU" /p:TargetFramework=net9.0 /p:SelfContained=false /verbosity:minimal
+        run: dotnet publish ./Il2CppInspector.CLI/Il2CppInspector.CLI.csproj --configuration Release --framework net9.0 --self-contained false
 
       - name: Add Plugins folder (GUI)
         shell: pwsh
-        working-directory: Il2CppInspector.GUI/bin/Release/net8.0-windows/win-x64/publish
+        working-directory: Il2CppInspector.GUI/bin/Release/net9.0-windows/win-x64/publish
         run: ../../../../../../get-plugins.ps1
 
       - name: Add Plugins folder (CLI)
         shell: pwsh
-        working-directory: Il2CppInspector.CLI/bin/Release/net8.0/win-x64/publish
+        working-directory: Il2CppInspector.CLI/bin/Release/net9.0/win-x64/publish
         run: ../../../../../../get-plugins.ps1
 
       - name: Upload GUI Artifact
@@ -50,8 +53,7 @@ jobs:
           path: Il2CppInspector.GUI/bin/Release/net9.0-windows/win-x64/publish
 
       - name: Upload CLI Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: Il2CppInspectorRedux.CLI
           path: Il2CppInspector.CLI/bin/Release/net9.0/win-x64/publish
-
