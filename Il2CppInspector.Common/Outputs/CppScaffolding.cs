@@ -38,14 +38,15 @@ namespace Il2CppInspector.Outputs
             using var fs = new FileStream(typeHeaderFile, FileMode.Create);
             _writer = new StreamWriter(fs, Encoding.ASCII);
 
-            const string decompilerIfDef = "#if !defined(_GHIDRA_) && !defined(_IDA_) && !defined(_IDACLANG_)";
-
             using (_writer)
             {
                 writeHeader();
 
                 // Write primitive type definitions for when we're not including other headers
                 writeCode($"""
+                       #define IS_LIBCLANG_DECOMPILER (defined(_IDACLANG_) || defined(_BINARYNINJA_))
+                       #define IS_DECOMPILER (defined(_GHIDRA_) || defined(_IDA_) || IS_LIBCLANG_DECOMPILER)
+
                        #if defined(_GHIDRA_) || defined(_IDA_)
                        typedef unsigned __int8 uint8_t;
                        typedef unsigned __int16 uint16_t;
@@ -57,7 +58,7 @@ namespace Il2CppInspector.Outputs
                        typedef __int64 int64_t;
                        #endif
                        
-                       #ifdef _IDACLANG_ 
+                       #if IS_LIBCLANG_DECOMPILER
                        typedef unsigned char uint8_t;
                        typedef unsigned short uint16_t;
                        typedef unsigned int uint32_t;
@@ -68,13 +69,13 @@ namespace Il2CppInspector.Outputs
                        typedef long int64_t;
                        #endif
                        
-                       #if defined(_GHIDRA_) || defined(_IDACLANG_)
+                       #if defined(_GHIDRA_) || IS_LIBCLANG_DECOMPILER
                        typedef int{_model.Package.BinaryImage.Bits}_t intptr_t;
                        typedef uint{_model.Package.BinaryImage.Bits}_t uintptr_t;
                        typedef uint{_model.Package.BinaryImage.Bits}_t size_t;
                        #endif
 
-                       {decompilerIfDef}
+                       #if !IS_DECOMPILER
                        #define _CPLUSPLUS_
                        #endif
                        """);
@@ -114,7 +115,7 @@ namespace Il2CppInspector.Outputs
                 }
 
                 // C does not support namespaces
-                writeCode($"{decompilerIfDef}");
+                writeCode("#if !IS_DECOMPILER");
                 writeCode("namespace app {");
                 writeCode("#endif");
                 writeLine("");
@@ -124,7 +125,7 @@ namespace Il2CppInspector.Outputs
                 writeTypesForGroup("Application types from usages", "types_from_usages");
                 writeTypesForGroup("Application unused value types", "unused_concrete_types");
 
-                writeCode($"{decompilerIfDef}");
+                writeCode("#if !IS_DECOMPILER");
                 writeCode("}");
                 writeCode("#endif");
             }

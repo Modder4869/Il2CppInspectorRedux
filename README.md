@@ -27,6 +27,7 @@ This is a continuation of [Il2CppInspector, by djkaty](https://github.com/djkaty
     - Automatic unloading of conflicting type libraries
     - Addition of custom fake string segment to show string literal contents in decompiler
     - A fake xref between MethodInfo instances and their corresponding method to quickly get the correct function
+* Binary Ninja script output, with all of the IDA-exclusive features
 
 ### Main features
 
@@ -36,7 +37,7 @@ This is a continuation of [Il2CppInspector, by djkaty](https://github.com/djkaty
 
 * Create **[C++ scaffolding](#creating-c-scaffolding-or-a-dll-injection-project)** for all types, methods, function pointers and API functions in an IL2CPP application for use in x64dbg, Cydia Substrate etc.
 
-* Create **[IDA](#adding-metadata-to-your-ida-workflow) and [Ghidra](#adding-metadata-to-your-ghidra-workflow) Python scripts** to populate symbol, function and type information; includes API hooks to [implement scripts for other targets](#extending-il2cppinspectors-python-output-to-support-other-targets)
+* Create **[IDA](#adding-metadata-to-your-ida-workflow), [Ghidra](#adding-metadata-to-your-ghidra-workflow) or [Binary Ninja](#adding-metadata-to-your-binary-ninja-workflow) Python scripts** to populate symbol, function and type information; includes API hooks to [implement scripts for other targets](#extending-il2cppinspectors-python-output-to-support-other-targets)
 
 * Create Visual Studio **[C++ DLL injection projects](#dll-injection-workflow)** directly from IL2CPP files
 
@@ -67,7 +68,6 @@ This is a continuation of [Il2CppInspector, by djkaty](https://github.com/djkaty
 * Works on Windows, MacOS X and Linux. **Integrated GUI** for Windows users with drag & drop support
 
 * Tested with [every release of IL2CPP](#version-support) since Unity 5.3.0
-
 
 ### Tutorials and Guides
 
@@ -124,7 +124,7 @@ Nice to have:
 * Automatically defeats certain basic obfuscation methods
 * Test chassis for automated integration testing of IL2CPP binaries
 
-Class library targets .NET 8. Built with Visual Studio 2019.
+Class library targets .NET 8. Built with Visual Studio 2022.
 
 **NOTE**: Il2CppInspector is not a decompiler. It can provide you with the structure of an application and function addresses for every method so that you can easily jump straight to methods of interest in your disassembler. It does not attempt to recover the entire source code of the application.
 
@@ -132,7 +132,7 @@ Class library targets .NET 8. Built with Visual Studio 2019.
 
 ```
 git clone --recursive https://github.com/LukeFZ/Il2CppInspectorRedux
-cd Il2CppInspector
+cd Il2CppInspectorRedux
 ```
 
 ##### Windows
@@ -181,9 +181,9 @@ Get all current plugins (optional):
 
 For other operating systems supporting .NET Core, add  `-r xxx` to the final command where `xxx` is a RID from https://docs.microsoft.com/en-us/dotnet/articles/core/rid-catalog
 
-The output binary for command-line usage is placed in `Il2CppInspector/Il2CppInspector.CLI/bin/Release/net8.0/[win|osx|linux]-x64/publish/Il2CppInspector.exe`.
+The output binary for command-line usage is placed in `Il2CppInspectorRedux/Il2CppInspector.CLI/bin/Release/net8.0/[win|osx|linux]-x64/publish/Il2CppInspector.exe`.
 
-The output binary for Windows GUI is placed in `Il2CppInspector/Il2CppInspector.GUI/bin/Release/net8.0-windows/win-x64/publish/Il2CppInspector.exe`.
+The output binary for Windows GUI is placed in `Il2CppInspectorRedux/Il2CppInspector.GUI/bin/Release/net8.0-windows/win-x64/publish/Il2CppInspector.exe`.
 
 The `plugins` folder should be placed in the same folder as `Il2CppInspector.exe`.
 
@@ -388,6 +388,12 @@ Il2CppInspector generates identical data for Ghidra projects as it does for IDA 
 Example Ghidra C++ decompilation after applying Il2CppInspector:
 
 ![Il2CppInspector annotated Ghidra project](docs/Ghidra_Preview.png)
+
+### Adding metadata to your Binary Ninja workflow
+
+Import your binary into Binary Ninja, and let the initial analysis complete.  
+Then run the generated *il2cpp.py* using the "File > Run script..." menu option.  
+You can view the current script progress in the bottom left corner, alongside the total elapsed time.
 
 ### Creating C++ scaffolding or a DLL injection project
 
@@ -706,23 +712,14 @@ You can find out more about plugins, and browse the source code of current plugi
 
 ### Extending Il2CppInspector's Python output to support other targets
 
-The current version of Il2CppInspector can output Python scripts targeting the IDA and Ghidra disassemblers.
+The current version of Il2CppInspector can output Python scripts targeting the IDA, Ghidra and Binary Ninja disassemblers.
 
-When Il2CppInspector generates such a script, it generates a concatenation of a shared block of code (`Outputs/ScriptResources/shared-main.py`) which parses the JSON metadata and dispatches it to a set of implementation-specific functions to be processed, and a block of code specific to the target application which implements these functions (a file from `Outputs/ScriptResources/Targets`).
+When Il2CppInspector generates such a script, it generates a concatenation of a shared block of code (`Outputs/ScriptResources/shared_base_.py`) which parses the JSON metadata and dispatches it to a set of implementation-specific functions to be processed, and a block of code specific to the target application which implements these functions (a file from `Outputs/ScriptResources/Targets`).
 
-If you would like to add support for a new target application, create a new Python script in `Outputs/ScriptResources/Targets` with the nane `<target-name-without-whitespace>.py` and implement the following functions:
-
-- `CustomInitializer()` - perform any custom initialization required for the target before applying the metadata
-- `DefineCode(code)` - parse and apply the specified C++ declaration text (this is not required for Unity 5.3.2 and later; if you don't need to support earlier versions, just specify `pass` as the implementation)
-- `GetScriptDirectory()` - retrieve the directory that the Python script is running in. This will normally be `os.path.dirname(os.path.realpath(__file__))`
-- `MakeFunction(start, name=None)` - define address `start` as the start of a function, optionally with name `name`
-- `SetComment(addr, text)` - place the comment `text` at address `addr`
-- `SetFunctionType(addr, sig)` - parse the C++ function signature in `sig` and apply it to the function at address `addr`
-- `SetHeaderComment(addr, text)` - place the header/plate/pre-item comment `text` at address `addr`
-- `SetName(addr, name)` - set the symbol (or label or name) of address `addr` to `name`
-- `SetType(addr, type)` - define address `addr` to be an item of the C++ type `type`
-
-Refer to the source code of `IDA.py` and `Ghidra.py` for examples.
+If you would like to add support for a new target application, create a new Python script in `Outputs/ScriptResources/Targets` with the nane `<target-name-without-whitespace>.py` and implement the *BaseDisassemblerInterface* class.  
+If you also want to have an updating status display, you also need to implement the *BaseStatusHandler* class.
+Your target implementation also needs to dispatch analysis at the end, by constructing a *ScriptContext* instance with your disassembler and status implementations, then calling the `process` methon it.  
+For a simple version of this you can view the *IDA* and *Ghidra* targets, and the *BinaryNinja* one for a more specific analysis dispatch.
 
 When you add a new target and re-compile Il2CppInspector:
 
@@ -815,6 +812,7 @@ The following books and documents were also very helpful:
 - [ARM Architecture Reference Manual ARMv8-A](https://developer.arm.com/docs/ddi0487/latest)
 - [Intel 64 and IA-32 Architectures Software Developer's Manual](https://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developer-instruction-set-reference-manual-325383.pdf)
 - [Ghidra API documentation](https://ghidra.re/ghidra_docs/api/)
+- [Binary Ninja API documentation](https://docs.binary.ninja/dev)
 
 Pizza spinner animation in the GUI made by Chris Gannon - https://gannon.tv/
 
