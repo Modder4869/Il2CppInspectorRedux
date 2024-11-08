@@ -108,13 +108,13 @@ namespace Il2CppInspector
                 return buildLateBindingMetadataUsages();
 
             // Version >= 19 && < 27
-            var usages = new Dictionary<uint, MetadataUsage>();
+            var usages = new Dictionary<uint, uint>();
             foreach (var metadataUsageList in Metadata.MetadataUsageLists)
             {
                 for (var i = 0; i < metadataUsageList.Count; i++)
                 {
                     var metadataUsagePair = Metadata.MetadataUsagePairs[metadataUsageList.Start + i];
-                    usages.TryAdd(metadataUsagePair.DestinationIndex, MetadataUsage.FromEncodedIndex(this, metadataUsagePair.EncodedSourceIndex));
+                    usages.TryAdd(metadataUsagePair.DestinationIndex, metadataUsagePair.EncodedSourceIndex);
                 }
             }
 
@@ -123,10 +123,12 @@ namespace Il2CppInspector
             // so we have to calculate the correct number of usages above before reading the usage address list from the binary
             var count = usages.Keys.Max() + 1;
             var addresses = Binary.Image.ReadMappedUWordArray(Binary.MetadataRegistration.MetadataUsages, (int) count);
-            foreach (var usage in usages)
-                usage.Value.SetAddress(addresses[usage.Key]);
 
-            return usages.Values.ToList();
+            var metadataUsages = new List<MetadataUsage>();
+            foreach (var (index, encodedUsage) in usages)
+                metadataUsages.Add(MetadataUsage.FromEncodedIndex(this, encodedUsage, addresses[index]));
+            
+            return metadataUsages;
         }
 
         private List<MetadataUsage> buildLateBindingMetadataUsages()
@@ -149,10 +151,7 @@ namespace Il2CppInspector
 
                     if (CheckMetadataUsageSanity(usage)
                         && BinaryImage.TryMapFileOffsetToVA(i * ((uint)BinaryImage.Bits / 8), out var va))
-                    {
-                        usage.SetAddress(va);
-                        usages.Add(usage);
-                    }
+                        usages.Add(MetadataUsage.FromEncodedIndex(this, encodedToken, va));
                 }
             }
 
