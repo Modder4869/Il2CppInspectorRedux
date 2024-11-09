@@ -105,7 +105,8 @@ namespace Il2CppInspector.Model
         }
 
         // Initialize
-        public AppModel(TypeModel model, bool makeDefaultBuild = true) {
+        public AppModel(TypeModel model, bool makeDefaultBuild = true)
+        {
             // Save .NET type model
             TypeModel = model;
 

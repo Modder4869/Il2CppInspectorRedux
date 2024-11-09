@@ -25,7 +25,7 @@ namespace Il2CppInspector
     {
         public MetadataUsageType Type { get; }
         public int SourceIndex { get; }
-        public ulong VirtualAddress { get; private set; }
+        public ulong VirtualAddress { get; }
 
         public readonly bool IsValid => Type != 0;
 
@@ -55,7 +55,5 @@ namespace Il2CppInspector
             }
             return new MetadataUsage(usageType, (int)index, virtualAddress);
         }
-
-        public void SetAddress(ulong virtualAddress) => VirtualAddress = virtualAddress;
     }
 }

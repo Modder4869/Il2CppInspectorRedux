@@ -22,7 +22,9 @@ namespace Il2CppInspector.Outputs
         public static IEnumerable<string> GetAvailableTargets() {
             var ns = typeof(PythonScript).Namespace + ".ScriptResources.Targets";
             var res = ResourceHelper.GetNamesForNamespace(ns);
-            return res.Select(s => Path.GetFileNameWithoutExtension(s.Substring(ns.Length + 1))).OrderBy(s => s);
+            return res
+                .Select(s => Path.GetFileNameWithoutExtension(s[(ns.Length + 1)..]))
+                .OrderBy(s => s);
         }
         
         // Output script file
@@ -52,12 +54,11 @@ namespace Il2CppInspector.Outputs
 
             var jsonMetadataRelativePath = getRelativePath(outputFile, jsonMetadataFile);
 
-            var ns = typeof(PythonScript).Namespace + ".ScriptResources";
-            var preamble = ResourceHelper.GetText(ns + ".shared-preamble.py");
-            var main = ResourceHelper.GetText(ns + ".shared-main.py");
-            var api = ResourceHelper.GetText($"{ns}.Targets.{target}.py");
+            var ns = $"{typeof(PythonScript).Namespace}.ScriptResources";
+            var baseScipt = ResourceHelper.GetText($"{ns}.shared_base.py");
+            var impl = ResourceHelper.GetText($"{ns}.Targets.{target}.py");
 
-            var script = string.Join("\n", new [] { preamble, api, main })
+            var script = string.Join("\n", baseScipt, impl)
                 .Replace("%SCRIPTFILENAME%", Path.GetFileName(outputFile))
                 .Replace("%TYPE_HEADER_RELATIVE_PATH%", typeHeaderRelativePath.ToEscapedString())
                 .Replace("%JSON_METADATA_RELATIVE_PATH%", jsonMetadataRelativePath.ToEscapedString())
