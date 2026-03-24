@@ -571,7 +571,7 @@ namespace Il2CppInspector
             // Additions in the argument to MapVATR may cause an overflow which should be discarded for 32-bit files
             if (Bits == 32)
                 uiAddr &= 0xffff_ffff;
-
+            if(uiAddr == 0)   uiAddr = uiAddr + this.ImageBase;
             var phtEntry = PHT.FirstOrDefault(x => uiAddr >= conv.ULong(x.p_vaddr) && uiAddr <= conv.ULong(conv.Add(x.p_vaddr, x.p_filesz)));
             if (phtEntry == null)
             {
